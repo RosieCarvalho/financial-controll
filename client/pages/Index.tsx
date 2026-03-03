@@ -1,12 +1,13 @@
 import { 
   TrendingUp, 
   TrendingDown, 
-  Wallet, 
-  CreditCard, 
-  ArrowUpRight, 
-  ArrowDownRight, 
+  Wallet,
+  CreditCard,
+  ArrowUpRight,
+  ArrowDownRight,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  PiggyBank
 } from "lucide-react";
 import { 
   BarChart, 
