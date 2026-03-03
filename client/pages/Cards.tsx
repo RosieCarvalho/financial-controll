@@ -5,9 +5,10 @@ import {
   User, 
   ChevronRight, 
   AlertCircle, 
-  Calendar, 
+  Calendar,
   Info,
-  Layers
+  Layers,
+  MoreVertical
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
