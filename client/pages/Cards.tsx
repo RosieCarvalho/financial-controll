@@ -14,17 +14,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const MOCK_CARDS = [
   { id: '1', name: 'Nubank', limit: 15000, used: 2500.50, dueDay: 12, closingDay: 5, color: 'bg-purple-600' },
@@ -38,6 +48,107 @@ const MOCK_THIRD_PARTY = [
 
 export default function CardsPage() {
   const [activeTab, setActiveTab] = useState("my-cards");
+  const [cards, setCards] = useState(MOCK_CARDS);
+  const [thirdPartyItems, setThirdPartyItems] = useState(MOCK_THIRD_PARTY);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [addType, setAddType] = useState<"card" | "third-party">("card");
+
+  // Form states
+  const [cardName, setCardName] = useState("");
+  const [cardLimit, setCardLimit] = useState("");
+  const [cardDueDay, setCardDueDay] = useState("");
+  const [cardClosingDay, setCardClosingDay] = useState("");
+
+  const [tpPerson, setTpPerson] = useState("");
+  const [tpDesc, setTpDesc] = useState("");
+  const [tpAmount, setTpAmount] = useState("");
+  const [tpInstallments, setTpInstallments] = useState("");
+  const [tpCardId, setTpCardId] = useState("");
+
+  const handleAddCard = () => {
+    if (!cardName || !cardLimit || !cardDueDay || !cardClosingDay) {
+      toast.error("Por favor, preencha todos os campos do cartão.");
+      return;
+    }
+
+    const newCard = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: cardName,
+      limit: parseFloat(cardLimit),
+      used: 0,
+      dueDay: parseInt(cardDueDay),
+      closingDay: parseInt(cardClosingDay),
+      color: `bg-slate-700` // Default color
+    };
+
+    setCards([...cards, newCard]);
+    setIsDialogOpen(false);
+    toast.success("Novo cartão adicionado!");
+    resetForms();
+  };
+
+  const handleAddThirdParty = () => {
+    if (!tpPerson || !tpDesc || !tpAmount || !tpInstallments || !tpCardId) {
+      toast.error("Por favor, preencha todos os campos da compra.");
+      return;
+    }
+
+    const newItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      person: tpPerson,
+      desc: tpDesc,
+      amount: parseFloat(tpAmount),
+      installments: parseInt(tpInstallments),
+      paid: 0,
+      cardId: tpCardId,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    setThirdPartyItems([...thirdPartyItems, newItem]);
+    setIsDialogOpen(false);
+    toast.success("Compra de terceiro registrada!");
+    resetForms();
+  };
+
+  const resetForms = () => {
+    setCardName("");
+    setCardLimit("");
+    setCardDueDay("");
+    setCardClosingDay("");
+    setTpPerson("");
+    setTpDesc("");
+    setTpAmount("");
+    setTpInstallments("");
+    setTpCardId("");
+  };
+
+  const handlePayInvoice = (id: string) => {
+    setCards(currentCards => currentCards.map(card => {
+      if (card.id === id) {
+        if (card.used > 0) {
+          toast.success(`Fatura do ${card.name} paga com sucesso!`);
+          return { ...card, used: 0 };
+        } else {
+          toast.info("Não há fatura pendente para este cartão.");
+        }
+      }
+      return card;
+    }));
+  };
+
+  const handleReceivePayment = (id: string) => {
+    setThirdPartyItems(items => items.map(item => {
+      if (item.id === id) {
+        if (item.paid < item.installments) {
+          toast.success(`Pagamento recebido de ${item.person}!`);
+          return { ...item, paid: item.paid + 1 };
+        } else {
+          toast.info("Todas as parcelas já foram pagas.");
+        }
+      }
+      return item;
+    }));
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -51,10 +162,103 @@ export default function CardsPage() {
             <Info className="h-4 w-4" />
             Como funciona?
           </Button>
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Adicionar Novo
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2"
+                onClick={() => setAddType(activeTab === "my-cards" ? "card" : "third-party")}
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar Novo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {addType === "card" ? "Novo Cartão" : "Nova Compra de Terceiro"}
+                </DialogTitle>
+                <DialogDescription>
+                  {addType === "card"
+                    ? "Adicione um novo cartão de crédito para gerenciar."
+                    : "Registre uma compra feita por outra pessoa no seu cartão."}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-4 py-4">
+                <Tabs defaultValue={addType} onValueChange={(v) => setAddType(v as any)}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="card">Cartão</TabsTrigger>
+                    <TabsTrigger value="third-party">Terceiro</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="card" className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-name">Nome do Cartão</Label>
+                      <Input id="card-name" value={cardName} onChange={(e) => setCardName(e.target.value)} placeholder="Ex: Nubank, Inter, Visa..." />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-limit">Limite Total</Label>
+                      <Input id="card-limit" type="number" value={cardLimit} onChange={(e) => setCardLimit(e.target.value)} placeholder="0.00" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="due-day">Dia do Vencimento</Label>
+                        <Input id="due-day" type="number" min="1" max="31" value={cardDueDay} onChange={(e) => setCardDueDay(e.target.value)} placeholder="Ex: 10" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="closing-day">Dia do Fechamento</Label>
+                        <Input id="closing-day" type="number" min="1" max="31" value={cardClosingDay} onChange={(e) => setCardClosingDay(e.target.value)} placeholder="Ex: 03" />
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="third-party" className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="tp-person">Nome da Pessoa</Label>
+                      <Input id="tp-person" value={tpPerson} onChange={(e) => setTpPerson(e.target.value)} placeholder="Quem comprou?" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="tp-desc">Descrição do Item</Label>
+                      <Input id="tp-desc" value={tpDesc} onChange={(e) => setTpDesc(e.target.value)} placeholder="O que foi comprado?" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="tp-amount">Valor Total</Label>
+                        <Input id="tp-amount" type="number" value={tpAmount} onChange={(e) => setTpAmount(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="tp-installments">Parcelas</Label>
+                        <Input id="tp-installments" type="number" value={tpInstallments} onChange={(e) => setTpInstallments(e.target.value)} placeholder="Ex: 10" />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Cartão Utilizado</Label>
+                      <Select value={tpCardId} onValueChange={setTpCardId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cartão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cards.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={addType === "card" ? handleAddCard : handleAddThirdParty}
+                >
+                  Salvar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -66,7 +270,7 @@ export default function CardsPage() {
 
         <TabsContent value="my-cards" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {MOCK_CARDS.map((card) => (
+            {cards.map((card) => (
               <Card key={card.id} className="border-none shadow-sm bg-card/50 backdrop-blur-md overflow-hidden group">
                 <div className={cn("h-2 w-full", card.color)} />
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -106,7 +310,15 @@ export default function CardsPage() {
                 </CardContent>
                 <CardFooter className="bg-secondary/20 border-t flex justify-between px-6 py-4">
                   <Button variant="ghost" size="sm" className="gap-2">Ver Detalhes <ChevronRight className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200">Pagar Fatura</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-emerald-600 border-emerald-200"
+                    onClick={() => handlePayInvoice(card.id)}
+                    disabled={card.used === 0}
+                  >
+                    Pagar Fatura
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
@@ -122,8 +334,8 @@ export default function CardsPage() {
             <CardContent>
               <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="grid grid-cols-1 divide-y">
-                  {MOCK_THIRD_PARTY.map((tp) => {
-                    const card = MOCK_CARDS.find(c => c.id === tp.cardId);
+                  {thirdPartyItems.map((tp) => {
+                    const card = cards.find(c => c.id === tp.cardId);
                     return (
                       <div key={tp.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-secondary/30 transition-colors duration-200">
                         <div className="flex items-center gap-4">
@@ -151,7 +363,15 @@ export default function CardsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 self-end md:self-center">
-                          <Button variant="outline" size="sm" className="h-8">Receber</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleReceivePayment(tp.id)}
+                            disabled={tp.paid >= tp.installments}
+                          >
+                            {tp.paid >= tp.installments ? "Pago" : "Receber"}
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </div>
                       </div>
