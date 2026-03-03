@@ -22,6 +22,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Category } from "@shared/api";
+import { cn } from "@/lib/utils";
 
 const MOCK_CATEGORIES: Category[] = [
   { id: '1', name: 'Aluguel', rule: '50', type: 'expense', color: '#059669' },
