@@ -1,10 +1,11 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
-import { 
-  CreditCard, 
-  Plus, 
-  User, 
-  ChevronRight, 
-  AlertCircle, 
+import {
+  CreditCard,
+  Plus,
+  User,
+  ChevronRight,
+  AlertCircle,
   Calendar,
   Info,
   Layers,
@@ -105,8 +106,12 @@ export default function CardsPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="bg-secondary/20 border-t flex justify-between px-6 py-4">
-                  <Button variant="ghost" size="sm" className="gap-2">Ver Detalhes <ChevronRight className="h-4 w-4" /></Button>
-                  <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200">Pagar Fatura</Button>
+                  <Link to={`/cards/${card.id}`}>
+                    <Button variant="ghost" size="sm" className="gap-2">Ver Detalhes <ChevronRight className="h-4 w-4" /></Button>
+                  </Link>
+                  <Link to={`/cards/${card.id}`}>
+                    <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200">Pagar Fatura</Button>
+                  </Link>
                 </CardFooter>
               </Card>
             ))}

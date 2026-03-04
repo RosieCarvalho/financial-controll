@@ -11,6 +11,7 @@ import Finances from "./pages/Finances";
 import Savings from "./pages/Savings";
 import Cards from "./pages/Cards";
 import Categories from "./pages/Categories";
+import CardDetails from "./pages/CardDetails";
 import NotFound from "./pages/NotFound";
 
 import { Layout } from "@/components/Layout";
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/" element={<Layout><Index /></Layout>} />
           <Route path="/finances" element={<Layout><Finances /></Layout>} />
           <Route path="/cards" element={<Layout><Cards /></Layout>} />
+          <Route path="/cards/:id" element={<Layout><CardDetails /></Layout>} />
           <Route path="/savings" element={<Layout><Savings /></Layout>} />
           <Route path="/categories" element={<Layout><Categories /></Layout>} />
           <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />

@@ -18,11 +18,13 @@ export interface Transaction {
   amount: number;
   date: string;
   categoryId: string;
-  type: 'fixed' | 'one-time';
+  type: 'fixed' | 'one-time' | 'installment';
   status: 'pending' | 'paid';
   cashBoxId?: string; // If coming from a specific box
   cardId?: string; // If paid via card
   thirdPartyId?: string; // If it's a third party purchase
+  installmentsTotal?: number;
+  currentInstallment?: number;
 }
 
 export interface CashBox {
@@ -46,6 +48,7 @@ export interface CreditCard {
   closingDay: number;
   dueDay: number;
   currentInvoice: number;
+  color: string;
 }
 
 export interface ThirdPartyPurchase {
