@@ -17,23 +17,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -61,54 +62,107 @@ export default function CardsPage() {
   const [activeTab, setActiveTab] = useState("my-cards");
   const [cards, setCards] = useState(MOCK_CARDS);
   const [thirdParty, setThirdParty] = useState(MOCK_THIRD_PARTY);
-  
-  // State for New Card
-  const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
-  const [newCard, setNewCard] = useState({ name: '', limit: '', dueDay: '', closingDay: '', color: 'bg-purple-600' });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [addType, setAddType] = useState<"card" | "third-party">("card");
 
-  // State for New Third Party Purchase
-  const [isTPDialogOpen, setIsTPDialogOpen] = useState(false);
-  const [newTP, setNewTP] = useState({ person: '', desc: '', amount: '', installments: '', cardId: '', date: new Date().toISOString().split('T')[0] });
+  // Form states for New Card
+  const [cardName, setCardName] = useState("");
+  const [cardLimit, setCardLimit] = useState("");
+  const [cardDueDay, setCardDueDay] = useState("");
+  const [cardClosingDay, setCardClosingDay] = useState("");
+  const [cardColor, setCardColor] = useState("bg-purple-600");
 
-  const handleAddCard = () => {
-    if (!newCard.name || !newCard.limit || !newCard.dueDay || !newCard.closingDay) {
-      toast.error("Preencha todos os campos do cartão!");
-      return;
-    }
-    const card = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newCard.name,
-      limit: parseFloat(newCard.limit),
-      used: 0,
-      dueDay: parseInt(newCard.dueDay),
-      closingDay: parseInt(newCard.closingDay),
-      color: newCard.color
-    };
-    setCards([...cards, card]);
-    setIsCardDialogOpen(false);
-    setNewCard({ name: '', limit: '', dueDay: '', closingDay: '', color: 'bg-purple-600' });
-    toast.success("Cartão adicionado com sucesso!");
+  // Form states for Third Party
+  const [tpPerson, setTpPerson] = useState("");
+  const [tpDesc, setTpDesc] = useState("");
+  const [tpAmount, setTpAmount] = useState("");
+  const [tpInstallments, setTpInstallments] = useState("");
+  const [tpCardId, setTpCardId] = useState("");
+
+  const resetForms = () => {
+    setCardName("");
+    setCardLimit("");
+    setCardDueDay("");
+    setCardClosingDay("");
+    setCardColor("bg-purple-600");
+    setTpPerson("");
+    setTpDesc("");
+    setTpAmount("");
+    setTpInstallments("");
+    setTpCardId("");
   };
 
-  const handleAddTP = () => {
-    if (!newTP.person || !newTP.desc || !newTP.amount || !newTP.installments || !newTP.cardId) {
-      toast.error("Preencha todos os campos da compra!");
+  const handleAddCard = () => {
+    if (!cardName || !cardLimit || !cardDueDay || !cardClosingDay) {
+      toast.error("Por favor, preencha todos os campos do cartão.");
       return;
     }
-    const purchase = {
+
+    const newCard = {
       id: Math.random().toString(36).substr(2, 9),
-      person: newTP.person,
-      desc: newTP.desc,
-      amount: parseFloat(newTP.amount),
-      installments: parseInt(newTP.installments),
-      paid: 0,
-      cardId: newTP.cardId,
-      date: newTP.date
+      name: cardName,
+      limit: parseFloat(cardLimit),
+      used: 0,
+      dueDay: parseInt(cardDueDay),
+      closingDay: parseInt(cardClosingDay),
+      color: cardColor
     };
-    setThirdParty([...thirdParty, purchase]);
-    setIsTPDialogOpen(false);
-    setNewTP({ person: '', desc: '', amount: '', installments: '', cardId: '', date: new Date().toISOString().split('T')[0] });
+
+    setCards([...cards, newCard]);
+    setIsDialogOpen(false);
+    toast.success("Novo cartão adicionado!");
+    resetForms();
+  };
+
+  const handleAddThirdParty = () => {
+    if (!tpPerson || !tpDesc || !tpAmount || !tpInstallments || !tpCardId) {
+      toast.error("Por favor, preencha todos os campos da compra.");
+      return;
+    }
+
+    const newItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      person: tpPerson,
+      desc: tpDesc,
+      amount: parseFloat(tpAmount),
+      installments: parseInt(tpInstallments),
+      paid: 0,
+      cardId: tpCardId,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    setThirdParty([...thirdParty, newItem]);
+    setIsDialogOpen(false);
     toast.success("Compra de terceiro registrada!");
+    resetForms();
+  };
+
+  const handlePayInvoice = (id: string) => {
+    setCards(currentCards => currentCards.map(card => {
+      if (card.id === id) {
+        if (card.used > 0) {
+          toast.success(`Fatura do ${card.name} paga com sucesso!`);
+          return { ...card, used: 0 };
+        } else {
+          toast.info("Não há fatura pendente para este cartão.");
+        }
+      }
+      return card;
+    }));
+  };
+
+  const handleReceivePayment = (id: string) => {
+    setThirdParty(items => items.map(item => {
+      if (item.id === id) {
+        if (item.paid < item.installments) {
+          toast.success(`Pagamento recebido de ${item.person}!`);
+          return { ...item, paid: item.paid + 1 };
+        } else {
+          toast.info("Todas as parcelas já foram pagas.");
+        }
+      }
+      return item;
+    }));
   };
 
   return (
@@ -119,152 +173,124 @@ export default function CardsPage() {
           <p className="text-muted-foreground">Gerencie seus cartões e compras de outras pessoas no seu crédito.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Dialog open={isCardDialogOpen} onOpenChange={setIsCardDialogOpen}>
+          <Button variant="outline" className="hidden md:flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            Como funciona?
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Novo Cartão
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Cartão</DialogTitle>
-                <DialogDescription>Cadastre um novo cartão de crédito para controle.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Nome do Banco/Cartão</label>
-                  <Input 
-                    placeholder="Ex: Nubank, Inter, XP" 
-                    value={newCard.name}
-                    onChange={(e) => setNewCard({...newCard, name: e.target.value})}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Limite Total</label>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      value={newCard.limit}
-                      onChange={(e) => setNewCard({...newCard, limit: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Cor</label>
-                    <Select value={newCard.color} onValueChange={(v) => setNewCard({...newCard, color: v})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {COLORS.map(c => (
-                          <SelectItem key={c.value} value={c.value}>
-                            <div className="flex items-center gap-2">
-                              <div className={cn("w-3 h-3 rounded-full", c.value)} />
-                              {c.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Dia Fechamento</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Ex: 5" 
-                      value={newCard.closingDay}
-                      onChange={(e) => setNewCard({...newCard, closingDay: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Dia Vencimento</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Ex: 12" 
-                      value={newCard.dueDay}
-                      onChange={(e) => setNewCard({...newCard, dueDay: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCardDialogOpen(false)}>Cancelar</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddCard}>Salvar Cartão</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isTPDialogOpen} onOpenChange={setIsTPDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2"
+                onClick={() => setAddType(activeTab === "my-cards" ? "card" : "third-party")}
+              >
                 <Plus className="h-4 w-4" />
-                Compra de Terceiro
+                Adicionar Novo
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Registrar Compra de Terceiro</DialogTitle>
-                <DialogDescription>Alguém usou seu cartão? Registre aqui para não esquecer de cobrar.</DialogDescription>
+                <DialogTitle>
+                  {addType === "card" ? "Novo Cartão" : "Nova Compra de Terceiro"}
+                </DialogTitle>
+                <DialogDescription>
+                  {addType === "card"
+                    ? "Adicione um novo cartão de crédito para gerenciar."
+                    : "Registre uma compra feita por outra pessoa no seu cartão."}
+                </DialogDescription>
               </DialogHeader>
+
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Nome da Pessoa</label>
-                    <Input 
-                      placeholder="Ex: João Silva" 
-                      value={newTP.person}
-                      onChange={(e) => setNewTP({...newTP, person: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Cartão Utilizado</label>
-                    <Select value={newTP.cardId} onValueChange={(v) => setNewTP({...newTP, cardId: v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cards.map(c => (
-                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">O que foi comprado?</label>
-                  <Input 
-                    placeholder="Ex: Monitor Gamer, Tênis" 
-                    value={newTP.desc}
-                    onChange={(e) => setNewTP({...newTP, desc: e.target.value})}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="grid gap-2 col-span-2">
-                    <label className="text-sm font-medium">Valor Total</label>
-                    <Input 
-                      type="number" 
-                      placeholder="0.00" 
-                      value={newTP.amount}
-                      onChange={(e) => setNewTP({...newTP, amount: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label className="text-sm font-medium">Parcelas</label>
-                    <Input 
-                      type="number" 
-                      placeholder="Ex: 10" 
-                      value={newTP.installments}
-                      onChange={(e) => setNewTP({...newTP, installments: e.target.value})}
-                    />
-                  </div>
-                </div>
+                <Tabs value={addType} onValueChange={(v) => setAddType(v as any)}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="card">Cartão</TabsTrigger>
+                    <TabsTrigger value="third-party">Terceiro</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="card" className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="card-name">Nome do Cartão</Label>
+                      <Input id="card-name" value={cardName} onChange={(e) => setCardName(e.target.value)} placeholder="Ex: Nubank, Inter, Visa..." />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="card-limit">Limite Total</Label>
+                        <Input id="card-limit" type="number" value={cardLimit} onChange={(e) => setCardLimit(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Cor</Label>
+                        <Select value={cardColor} onValueChange={setCardColor}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COLORS.map(c => (
+                              <SelectItem key={c.value} value={c.value}>
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("w-3 h-3 rounded-full", c.value)} />
+                                  {c.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="due-day">Dia do Vencimento</Label>
+                        <Input id="due-day" type="number" min="1" max="31" value={cardDueDay} onChange={(e) => setCardDueDay(e.target.value)} placeholder="Ex: 10" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="closing-day">Dia do Fechamento</Label>
+                        <Input id="closing-day" type="number" min="1" max="31" value={cardClosingDay} onChange={(e) => setCardClosingDay(e.target.value)} placeholder="Ex: 03" />
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="third-party" className="space-y-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="tp-person">Nome da Pessoa</Label>
+                      <Input id="tp-person" value={tpPerson} onChange={(e) => setTpPerson(e.target.value)} placeholder="Quem comprou?" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="tp-desc">Descrição do Item</Label>
+                      <Input id="tp-desc" value={tpDesc} onChange={(e) => setTpDesc(e.target.value)} placeholder="O que foi comprado?" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="tp-amount">Valor Total</Label>
+                        <Input id="tp-amount" type="number" value={tpAmount} onChange={(e) => setTpAmount(e.target.value)} placeholder="0.00" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="tp-installments">Parcelas</Label>
+                        <Input id="tp-installments" type="number" value={tpInstallments} onChange={(e) => setTpInstallments(e.target.value)} placeholder="Ex: 10" />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Cartão Utilizado</Label>
+                      <Select value={tpCardId} onValueChange={setTpCardId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um cartão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cards.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
+
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsTPDialogOpen(false)}>Cancelar</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddTP}>Salvar Compra</Button>
+                <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForms(); }}>Cancelar</Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={addType === "card" ? handleAddCard : handleAddThirdParty}
+                >
+                  Salvar
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -321,9 +347,15 @@ export default function CardsPage() {
                   <Link to={`/cards/${card.id}`}>
                     <Button variant="ghost" size="sm" className="gap-2">Ver Detalhes <ChevronRight className="h-4 w-4" /></Button>
                   </Link>
-                  <Link to={`/cards/${card.id}`}>
-                    <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-200">Pagar Fatura</Button>
-                  </Link>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-emerald-600 border-emerald-200"
+                    onClick={() => handlePayInvoice(card.id)}
+                    disabled={card.used === 0}
+                  >
+                    Pagar Fatura
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
@@ -368,7 +400,15 @@ export default function CardsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 self-end md:self-center">
-                          <Button variant="outline" size="sm" className="h-8">Receber</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleReceivePayment(tp.id)}
+                            disabled={tp.paid >= tp.installments}
+                          >
+                            {tp.paid >= tp.installments ? "Pago" : "Receber"}
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </div>
                       </div>
