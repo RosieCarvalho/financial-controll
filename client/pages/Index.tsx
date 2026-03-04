@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -7,7 +8,8 @@ import {
   ArrowDownRight,
   Calendar,
   AlertCircle,
-  PiggyBank
+  PiggyBank,
+  ChevronDown
 } from "lucide-react";
 import { 
   BarChart, 
@@ -25,6 +27,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const MONTHS = [
+  { value: "0", label: "Janeiro" },
+  { value: "1", label: "Fevereiro" },
+  { value: "2", label: "Março" },
+  { value: "3", label: "Abril" },
+  { value: "4", label: "Maio" },
+  { value: "5", label: "Junho" },
+  { value: "6", label: "Julho" },
+  { value: "7", label: "Agosto" },
+  { value: "8", label: "Setembro" },
+  { value: "9", label: "Outubro" },
+  { value: "10", label: "Novembro" },
+  { value: "11", label: "Dezembro" },
+];
 
 const MOCK_DATA = {
   summary: {
@@ -43,9 +68,10 @@ const MOCK_DATA = {
     { id: '2', name: 'Inter', due: '15/10', amount: 450.20, status: 'default' },
   ],
   recentActivity: [
-    { id: '1', desc: 'Mercado Livre', amount: -150.00, date: 'Hoje', cat: 'Desejos' },
-    { id: '2', desc: 'Salário', amount: 5000.00, date: 'Ontem', cat: 'Renda' },
-    { id: '3', desc: 'Aluguel', amount: -1800.00, date: '05/10', cat: 'Essencial' },
+    { id: '1', desc: 'Mercado Livre', amount: -150.00, date: '2023-10-15', cat: 'Desejos' },
+    { id: '2', desc: 'Salário', amount: 5000.00, date: '2023-10-01', cat: 'Renda' },
+    { id: '3', desc: 'Aluguel', amount: -1800.00, date: '2023-10-05', cat: 'Essencial' },
+    { id: '4', desc: 'Posto de Gasolina', amount: -200.00, date: '2023-09-20', cat: 'Essencial' },
   ]
 };
 
@@ -73,41 +99,86 @@ const StatCard = ({ title, amount, icon: Icon, trend, color }: any) => (
   </Card>
 );
 
-import { cn } from "@/lib/utils";
-
 export default function Dashboard() {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString());
+
+  const filteredActivity = useMemo(() => {
+    return MOCK_DATA.recentActivity.filter(activity => {
+      const date = new Date(activity.date);
+      return date.getMonth().toString() === selectedMonth;
+    });
+  }, [selectedMonth]);
+
+  // Simulate monthly data changes based on selection
+  const monthlySummary = useMemo(() => {
+    // If it's not October (9), let's vary the data a bit to show it's "filtering"
+    const multiplier = selectedMonth === "9" ? 1 : (parseInt(selectedMonth) % 2 === 0 ? 0.8 : 1.2);
+    return {
+      income: MOCK_DATA.summary.income * multiplier,
+      expenses: MOCK_DATA.summary.expenses * multiplier,
+      balance: (MOCK_DATA.summary.income - MOCK_DATA.summary.expenses) * multiplier,
+      savings: MOCK_DATA.summary.savings * multiplier,
+    };
+  }, [selectedMonth]);
+
+  const ruleData = useMemo(() => {
+    const multiplier = selectedMonth === "9" ? 1 : (parseInt(selectedMonth) % 2 === 0 ? 0.8 : 1.2);
+    return MOCK_DATA.rule503020.map(item => ({
+      ...item,
+      value: item.value * multiplier
+    }));
+  }, [selectedMonth]);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, Rosiene</h1>
-        <p className="text-muted-foreground">Aqui está o resumo do seu controle financeiro este mês.</p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, Rosiene</h1>
+          <p className="text-muted-foreground">Aqui está o resumo do seu controle financeiro.</p>
+        </div>
+        
+        <div className="flex items-center gap-2 bg-white/50 p-1 rounded-lg border border-emerald-100 shadow-sm">
+          <Calendar className="ml-2 h-4 w-4 text-emerald-600" />
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[140px] border-none bg-transparent focus:ring-0">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Receita Total" 
-          amount={MOCK_DATA.summary.income} 
+          amount={monthlySummary.income} 
           icon={TrendingUp} 
           trend={12} 
           color="bg-emerald-500"
         />
         <StatCard 
           title="Despesas Totais" 
-          amount={MOCK_DATA.summary.expenses} 
+          amount={monthlySummary.expenses} 
           icon={TrendingDown} 
           trend={-5} 
           color="bg-rose-500"
         />
         <StatCard 
           title="Saldo Atual" 
-          amount={MOCK_DATA.summary.balance} 
+          amount={monthlySummary.balance} 
           icon={Wallet} 
           color="bg-blue-500"
         />
         <StatCard 
           title="Caixinhas" 
-          amount={MOCK_DATA.summary.savings} 
+          amount={monthlySummary.savings} 
           icon={PiggyBank} 
           trend={8} 
           color="bg-amber-500"
@@ -120,7 +191,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
-              Equilíbrio Financeiro (50/30/20)
+              Equilíbrio Financeiro (50/30/20) - {MONTHS.find(m => m.value === selectedMonth)?.label}
             </CardTitle>
             <CardDescription>
               Acompanhe como você está distribuindo seus gastos.
@@ -129,7 +200,7 @@ export default function Dashboard() {
           <CardContent className="space-y-8 pt-4">
             <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={MOCK_DATA.rule503020} layout="vertical" margin={{ left: 0, right: 30 }}>
+                <BarChart data={ruleData} layout="vertical" margin={{ left: 0, right: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
                   <XAxis type="number" hide />
                   <YAxis 
@@ -145,7 +216,7 @@ export default function Dashboard() {
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
-                    {MOCK_DATA.rule503020.map((entry, index) => (
+                    {ruleData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Bar>
@@ -154,7 +225,7 @@ export default function Dashboard() {
             </div>
             
             <div className="grid gap-6">
-              {MOCK_DATA.rule503020.map((item) => (
+              {ruleData.map((item) => (
                 <div key={item.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm font-medium">
                     <span className="flex items-center gap-2">
@@ -212,10 +283,10 @@ export default function Dashboard() {
 
           <Card className="border-none shadow-sm bg-card/50 backdrop-blur-md">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Atividade Recente</CardTitle>
+              <CardTitle className="text-lg">Atividade Recente - {MONTHS.find(m => m.value === selectedMonth)?.label}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {MOCK_DATA.recentActivity.map((activity) => (
+              {filteredActivity.map((activity) => (
                 <div key={activity.id} className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-3">
                     <div className={cn(
@@ -226,7 +297,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="font-medium">{activity.desc}</p>
-                      <p className="text-xs text-muted-foreground">{activity.date} • {activity.cat}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(activity.date).toLocaleDateString('pt-BR')} • {activity.cat}</p>
                     </div>
                   </div>
                   <p className={cn("font-semibold", activity.amount > 0 ? "text-emerald-600" : "text-foreground")}>
@@ -235,6 +306,9 @@ export default function Dashboard() {
                   </p>
                 </div>
               ))}
+              {filteredActivity.length === 0 && (
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhuma atividade neste mês.</p>
+              )}
             </CardContent>
           </Card>
         </div>

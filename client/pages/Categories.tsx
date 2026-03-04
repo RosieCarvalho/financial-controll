@@ -1,28 +1,46 @@
 import { useState } from "react";
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
+import {
+  Plus,
+  Search,
+  MoreVertical,
   Tags,
   Target,
   ShoppingCart,
   Zap,
-  Briefcase
+  Briefcase,
+  Palette
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Category } from "@shared/api";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const MOCK_CATEGORIES: Category[] = [
   { id: '1', name: 'Aluguel', rule: '50', type: 'expense', color: '#059669' },
@@ -34,12 +52,60 @@ const MOCK_CATEGORIES: Category[] = [
   { id: '7', name: 'Saúde', rule: '50', type: 'expense', color: '#059669' },
 ];
 
+const COLOR_OPTIONS = [
+  { name: 'Emerald', value: '#059669' },
+  { name: 'Teal', value: '#14b8a6' },
+  { name: 'Sky', value: '#0ea5e9' },
+  { name: 'Blue', value: '#3b82f6' },
+  { name: 'Indigo', value: '#6366f1' },
+  { name: 'Purple', value: '#a855f7' },
+  { name: 'Rose', value: '#f43f5e' },
+  { name: 'Orange', value: '#f97316' },
+  { name: 'Amber', value: '#f59e0b' },
+  { name: 'Gray', value: '#6b7280' },
+];
+
 export default function CategoriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const filteredCategories = MOCK_CATEGORIES.filter(c => 
+  // Form State
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState<"income" | "expense">("expense");
+  const [newRule, setNewRule] = useState("50");
+  const [newColor, setNewColor] = useState("#059669");
+
+  const filteredCategories = categories.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleAddCategory = () => {
+    if (!newName) {
+      toast.error("Por favor, preencha o nome da categoria.");
+      return;
+    }
+
+    const newCategory: Category = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newName,
+      type: newType,
+      rule: newRule as "50" | "30" | "20",
+      color: newColor
+    };
+
+    setCategories([...categories, newCategory]);
+    setIsDialogOpen(false);
+    resetForm();
+    toast.success("Categoria adicionada com sucesso!");
+  };
+
+  const resetForm = () => {
+    setNewName("");
+    setNewType("expense");
+    setNewRule("50");
+    setNewColor("#059669");
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -48,10 +114,82 @@ export default function CategoriesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Categorias</h1>
           <p className="text-muted-foreground">Gerencie as categorias de gastos e receitas do seu plano 50/30/20.</p>
         </div>
-        <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Categoria
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Categoria
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Nova Categoria</DialogTitle>
+              <DialogDescription>
+                Crie uma nova categoria para organizar suas transações.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-medium">Nome</label>
+                <Input
+                  placeholder="Ex: Farmácia, Academia, etc."
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Tipo</label>
+                  <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Receita</SelectItem>
+                      <SelectItem value="expense">Despesa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Regra (50/30/20)</label>
+                  <Select value={newRule} onValueChange={setNewRule} disabled={newType === "income"}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="50">Essenciais (50%)</SelectItem>
+                      <SelectItem value="30">Desejos (30%)</SelectItem>
+                      <SelectItem value="20">Reserva (20%)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" /> Cor da Categoria
+                </label>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => setNewColor(color.value)}
+                      className={cn(
+                        "w-8 h-8 rounded-full border-2 transition-all duration-200",
+                        newColor === color.value ? "border-primary scale-110 shadow-md" : "border-transparent hover:scale-105"
+                      )}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddCategory}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

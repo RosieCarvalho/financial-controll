@@ -1,47 +1,50 @@
-import { useState } from "react";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  TrendingUp, 
-  TrendingDown, 
-  MoreVertical, 
-  Pencil, 
-  Trash2, 
-  PiggyBank, 
-  CheckCircle2, 
-  Clock
+import { useState, useMemo } from "react";
+import {
+  Plus,
+  Search,
+  Filter,
+  TrendingUp,
+  TrendingDown,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  PiggyBank,
+  CheckCircle2,
+  Clock,
+  Calendar
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Category, Transaction } from "@shared/api";
+import { toast } from "sonner";
 
 const MOCK_CATEGORIES: Category[] = [
   { id: '1', name: 'Aluguel', rule: '50', type: 'expense', color: '#059669' },
@@ -56,19 +59,97 @@ const MOCK_TRANSACTIONS: Transaction[] = [
   { id: '2', description: 'Aluguel Outubro', amount: -1800, date: '2023-10-05', categoryId: '1', type: 'fixed', status: 'paid' },
   { id: '3', description: 'Netflix', amount: -55.90, date: '2023-10-08', categoryId: '3', type: 'fixed', status: 'paid' },
   { id: '4', description: 'Supermercado BH', amount: -450.25, date: '2023-10-10', categoryId: '2', type: 'one-time', status: 'pending' },
+  { id: '5', description: 'Combustível', amount: -200, date: '2023-09-15', categoryId: '2', type: 'one-time', status: 'paid' },
+];
+
+const MONTHS = [
+  { value: "0", label: "Janeiro" },
+  { value: "1", label: "Fevereiro" },
+  { value: "2", label: "Março" },
+  { value: "3", label: "Abril" },
+  { value: "4", label: "Maio" },
+  { value: "5", label: "Junho" },
+  { value: "6", label: "Julho" },
+  { value: "7", label: "Agosto" },
+  { value: "8", label: "Setembro" },
+  { value: "9", label: "Outubro" },
+  { value: "10", label: "Novembro" },
+  { value: "11", label: "Dezembro" },
 ];
 
 export default function Finances() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString());
+  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === "all" || 
-                      (activeTab === "income" && t.amount > 0) || 
-                      (activeTab === "expense" && t.amount < 0);
-    return matchesSearch && matchesTab;
-  });
+  // Form State
+  const [desc, setDesc] = useState("");
+  const [amount, setAmount] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [categoryId, setCategoryId] = useState("");
+  const [type, setType] = useState<"fixed" | "one-time">("one-time");
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      const matchesMonth = transactionDate.getMonth().toString() === selectedMonth;
+      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTab = activeTab === "all" ||
+                        (activeTab === "income" && t.amount > 0) ||
+                        (activeTab === "expense" && t.amount < 0);
+      return matchesMonth && matchesSearch && matchesTab;
+    });
+  }, [transactions, searchTerm, activeTab, selectedMonth]);
+
+  const stats = useMemo(() => {
+    const income = filteredTransactions
+      .filter(t => t.amount > 0)
+      .reduce((acc, t) => acc + t.amount, 0);
+    const expenses = Math.abs(filteredTransactions
+      .filter(t => t.amount < 0)
+      .reduce((acc, t) => acc + t.amount, 0));
+    return {
+      income,
+      expenses,
+      balance: income - expenses
+    };
+  }, [filteredTransactions]);
+
+  const handleAddTransaction = () => {
+    if (!desc || !amount || !date || !categoryId) {
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    const cat = MOCK_CATEGORIES.find(c => c.id === categoryId);
+    const numericAmount = parseFloat(amount);
+    const finalAmount = cat?.type === 'expense' ? -Math.abs(numericAmount) : Math.abs(numericAmount);
+
+    const newTransaction: Transaction = {
+      id: Math.random().toString(36).substr(2, 9),
+      description: desc,
+      amount: finalAmount,
+      date: date,
+      categoryId: categoryId,
+      type: type,
+      status: 'paid'
+    };
+
+    setTransactions([newTransaction, ...transactions]);
+    setIsDialogOpen(false);
+    resetForm();
+    toast.success("Transação adicionada com sucesso!");
+  };
+
+  const resetForm = () => {
+    setDesc("");
+    setAmount("");
+    setDate(new Date().toISOString().split('T')[0]);
+    setCategoryId("");
+    setType("one-time");
+  };
 
   const getCategory = (id: string) => MOCK_CATEGORIES.find(c => c.id === id);
 
@@ -80,11 +161,20 @@ export default function Finances() {
           <p className="text-muted-foreground">Gerencie suas receitas e despesas.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="hidden md:flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            Filtrar
-          </Button>
-          <Dialog>
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger className="w-[150px] bg-white shadow-sm border-emerald-100 focus:ring-emerald-500">
+              <Calendar className="mr-2 h-4 w-4 text-emerald-600" />
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTHS.map((month) => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
                 <Plus className="h-4 w-4" />
@@ -101,21 +191,37 @@ export default function Finances() {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <label htmlFor="desc" className="text-sm font-medium">Descrição</label>
-                  <Input id="desc" placeholder="Ex: Aluguel, Salário, etc." />
+                  <Input
+                    id="desc"
+                    placeholder="Ex: Aluguel, Salário, etc."
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <label htmlFor="amount" className="text-sm font-medium">Valor</label>
-                    <Input id="amount" type="number" placeholder="0.00" />
+                    <Input
+                      id="amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <label htmlFor="date" className="text-sm font-medium">Data</label>
-                    <Input id="date" type="date" />
+                    <Input
+                      id="date"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="cat" className="text-sm font-medium">Categoria</label>
-                  <Select>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
@@ -127,23 +233,22 @@ export default function Finances() {
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <label className="text-sm font-medium">Origem do Dinheiro (Opcional)</label>
-                  <Select>
+                  <label className="text-sm font-medium">Tipo</label>
+                  <Select value={type} onValueChange={(v: any) => setType(v)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Caixa padrão" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="main">Conta Principal</SelectItem>
-                      <SelectItem value="fgts">Caixa FGTS</SelectItem>
-                      <SelectItem value="reserva">Reserva de Emergência</SelectItem>
+                      <SelectItem value="one-time">Único</SelectItem>
+                      <SelectItem value="fixed">Fixo</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline">Cancelar</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">Salvar</Button>
-              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddTransaction}>Salvar</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
@@ -157,7 +262,9 @@ export default function Finances() {
             </div>
             <div>
               <p className="text-sm font-medium text-emerald-800">Receitas do Mês</p>
-              <h3 className="text-2xl font-bold text-emerald-900">R$ 5.000,00</h3>
+              <h3 className="text-2xl font-bold text-emerald-900">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.income)}
+              </h3>
             </div>
           </CardContent>
         </Card>
@@ -168,7 +275,9 @@ export default function Finances() {
             </div>
             <div>
               <p className="text-sm font-medium text-rose-800">Despesas do Mês</p>
-              <h3 className="text-2xl font-bold text-rose-900">R$ 2.306,15</h3>
+              <h3 className="text-2xl font-bold text-rose-900">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.expenses)}
+              </h3>
             </div>
           </CardContent>
         </Card>
@@ -179,7 +288,9 @@ export default function Finances() {
             </div>
             <div>
               <p className="text-sm font-medium text-blue-800">Saldo Disponível</p>
-              <h3 className="text-2xl font-bold text-blue-900">R$ 2.693,85</h3>
+              <h3 className="text-2xl font-bold text-blue-900">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.balance)}
+              </h3>
             </div>
           </CardContent>
         </Card>
