@@ -253,53 +253,6 @@ export default function FuturePlans() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-primary/5 border-primary/10 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-xl text-primary">
-              <TrendingUp className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Média de Receita</p>
-              <h3 className="text-xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(MOCK_MONTHLY_STATS.avgIncome)}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-rose-50 border-rose-100 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-rose-100 rounded-xl text-rose-600">
-              <TrendingDown className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Média de Despesa</p>
-              <h3 className="text-xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(MOCK_MONTHLY_STATS.avgExpenses)}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-emerald-50 border-emerald-100 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600">
-              <Sparkles className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sobra Mensal</p>
-              <h3 className="text-xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(MOCK_MONTHLY_STATS.avgSurplus)}</h3>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-50 border-blue-100 shadow-sm">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-xl text-blue-600">
-              <Wallet className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo Atual</p>
-              <h3 className="text-xl font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(MOCK_MONTHLY_STATS.currentBalance)}</h3>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="flex items-center gap-2 px-1">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -312,77 +265,82 @@ export default function FuturePlans() {
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredPlans.map((plan) => {
           const comfort = calculateComfort(plan.totalValue, plan.installments, plan.plannedMonth, plan.plannedYear);
-          
+
           return (
-            <Card key={plan.id} className="border-none shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 backdrop-blur-md overflow-hidden">
-              <div className="grid md:grid-cols-4 gap-4 p-6">
-                <div className="md:col-span-1 border-r border-dashed border-muted-foreground/20 pr-4">
-                  <div className="flex items-center gap-3 mb-2">
+            <Card key={plan.id} className="border-none shadow-sm hover:shadow-md transition-all duration-200 bg-card/50 backdrop-blur-md overflow-hidden flex flex-col">
+              <div className="p-5 flex-1 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg text-primary">
                       <Sparkles className="h-4 w-4" />
                     </div>
-                    <h3 className="font-bold text-lg">{plan.itemName}</h3>
+                    <h3 className="font-bold text-lg leading-tight">{plan.itemName}</h3>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Valor Total</p>
-                    <p className="text-xl font-bold text-primary">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.totalValue)}
+                  <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 -mt-2">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase font-semibold">Valor Total</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.totalValue)}
+                  </p>
+                  {plan.installments > 1 && (
+                    <p className="text-xs text-muted-foreground">
+                      {plan.installments}x de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.totalValue / plan.installments)}
                     </p>
-                    {plan.installments > 1 && (
-                      <p className="text-xs text-muted-foreground">
-                        {plan.installments}x de {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.totalValue / plan.installments)}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                <div className="md:col-span-1 px-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Mês Pretendido</p>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{MONTHS[plan.plannedMonth]} / {plan.plannedYear}</span>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1 tracking-wider">Mês Pretendido</p>
+                    <div className="flex items-center gap-1.5 text-sm font-medium">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{MONTHS[plan.plannedMonth].slice(0, 3)} / {plan.plannedYear}</span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Mês Sugerido</p>
-                    <div className="flex items-center gap-2 text-emerald-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="font-bold">{MONTHS[comfort.suggestedMonth]} / {comfort.suggestedYear}</span>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold mb-1 tracking-wider">Sugerido</p>
+                    <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-600">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>{MONTHS[comfort.suggestedMonth].slice(0, 3)} / {comfort.suggestedYear}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="md:col-span-1 px-4">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Status de Conforto</p>
+                <div className="pt-2">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold mb-2 tracking-wider">Conforto</p>
                   {comfort.isComfortable ? (
-                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-3 py-1 gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Confortável
+                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5 text-[11px] gap-1 w-fit">
+                      <CheckCircle2 className="h-3 w-3" /> Confortável
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none px-3 py-1 gap-1.5">
-                      <Clock className="h-3.5 w-3.5" /> Requer Planejamento
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none px-2 py-0.5 text-[11px] gap-1 w-fit">
+                      <Clock className="h-3 w-3" /> Planejar
                     </Badge>
                   )}
-                  <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed italic">
-                    {comfort.isComfortable 
-                      ? "Esta compra se encaixa bem no seu orçamento atual sem comprometer sua reserva."
-                      : "Sugerimos esperar um pouco mais para acumular uma reserva maior antes dessa compra."}
-                  </p>
                 </div>
+              </div>
 
-                <div className="md:col-span-1 bg-secondary/30 rounded-xl p-4 flex flex-col justify-center">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">Saldo Após Compra</p>
-                  <h4 className={cn(
-                    "text-xl font-bold",
-                    comfort.balanceAfterPurchase > 0 ? "text-emerald-600" : "text-rose-600"
-                  )}>
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(comfort.balanceAfterPurchase)}
-                  </h4>
-                  <p className="text-[10px] text-muted-foreground mt-1">Saldo estimado no mês da compra</p>
+              <div className="bg-secondary/30 p-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Saldo Estimado</p>
+                    <h4 className={cn(
+                      "text-lg font-bold",
+                      comfort.balanceAfterPurchase > 0 ? "text-emerald-600" : "text-rose-600"
+                    )}>
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(comfort.balanceAfterPurchase)}
+                    </h4>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground italic leading-tight">Após a compra</p>
+                  </div>
                 </div>
               </div>
             </Card>
