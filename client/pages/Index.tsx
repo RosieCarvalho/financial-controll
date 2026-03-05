@@ -9,7 +9,9 @@ import {
   Calendar,
   AlertCircle,
   PiggyBank,
-  ChevronDown
+  ChevronDown,
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
 import { 
   BarChart, 
@@ -34,6 +36,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const MONTHS = [
@@ -72,6 +75,11 @@ const MOCK_DATA = {
     { id: '2', desc: 'Salário', amount: 5000.00, date: '2023-10-01', cat: 'Renda' },
     { id: '3', desc: 'Aluguel', amount: -1800.00, date: '2023-10-05', cat: 'Essencial' },
     { id: '4', desc: 'Posto de Gasolina', amount: -200.00, date: '2023-09-20', cat: 'Essencial' },
+  ],
+  futurePlans: [
+    { id: '1', itemName: 'MacBook Pro M3', totalValue: 12000, plannedMonth: 10, plannedYear: 2023, color: '#6366f1' },
+    { id: '2', itemName: 'Viagem Argentina', totalValue: 5000, plannedMonth: 0, plannedYear: 2024, color: '#f59e0b' },
+    { id: '3', itemName: 'iPhone 15', totalValue: 8000, plannedMonth: 2, plannedYear: 2024, color: '#06b6d4' },
   ]
 };
 
@@ -309,6 +317,58 @@ export default function Dashboard() {
               {filteredActivity.length === 0 && (
                 <p className="text-center text-muted-foreground text-sm py-4">Nenhuma atividade neste mês.</p>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-primary/5 backdrop-blur-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Próximas Conquistas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-2">
+              <div className="h-[180px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={MOCK_DATA.futurePlans}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="totalValue"
+                    >
+                      {MOCK_DATA.futurePlans.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                      formatter={(value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-3">
+                {MOCK_DATA.futurePlans.map((plan) => (
+                  <div key={plan.id} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: plan.color }} />
+                      <span className="font-medium">{plan.itemName}</span>
+                    </div>
+                    <span className="text-muted-foreground font-mono text-xs">
+                      {MONTHS[plan.plannedMonth].label.slice(0, 3)}/{plan.plannedYear}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Link to="/future-plans">
+                <Button variant="ghost" className="w-full mt-2 text-primary gap-2" size="sm">
+                  Ver detalhes do planejamento <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
