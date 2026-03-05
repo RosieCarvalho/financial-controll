@@ -12,6 +12,7 @@ import Savings from "./pages/Savings";
 import Cards from "./pages/Cards";
 import Categories from "./pages/Categories";
 import CardDetails from "./pages/CardDetails";
+import FuturePlans from "./pages/FuturePlans";
 import NotFound from "./pages/NotFound";
 
 import { Layout } from "@/components/Layout";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/cards" element={<Layout><Cards /></Layout>} />
           <Route path="/cards/:id" element={<Layout><CardDetails /></Layout>} />
           <Route path="/savings" element={<Layout><Savings /></Layout>} />
+          <Route path="/future-plans" element={<Layout><FuturePlans /></Layout>} />
           <Route path="/categories" element={<Layout><Categories /></Layout>} />
           <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

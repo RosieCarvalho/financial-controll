@@ -8,9 +8,10 @@ import {
   Settings, 
   Menu, 
   X, 
-  TrendingUp, 
+  TrendingUp,
   TrendingDown,
-  Tags
+  Tags,
+  Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
     { href: "/finances", icon: Wallet, label: "Financeiro" },
     { href: "/cards", icon: CreditCard, label: "Cartões e Terceiros" },
     { href: "/savings", icon: PiggyBank, label: "Caixinhas" },
+    { href: "/future-plans", icon: Sparkles, label: "Planos Futuros" },
     { href: "/categories", icon: Tags, label: "Categorias" },
   ];
 

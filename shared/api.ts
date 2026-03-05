@@ -62,6 +62,16 @@ export interface ThirdPartyPurchase {
   paidInstallments: number;
 }
 
+export interface FuturePlan {
+  id: string;
+  itemName: string;
+  totalValue: number;
+  installments: number;
+  plannedMonth: number; // 0-11 for month index
+  plannedYear: number;
+  status: 'pending' | 'completed';
+}
+
 export interface DashboardData {
   totalIncome: number;
   totalExpenses: number;
