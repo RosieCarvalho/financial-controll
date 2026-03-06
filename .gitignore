@@ -1,4 +1,22 @@
-# Logs
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+/.vite
+/.turbo
+.DS_Store
+.idea/
+*.log
+pnpm-lock.yaml
+/.parcel-cache
+/.next
+/.expo
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*# Logs
 logs
 *.log
 npm-debug.log*

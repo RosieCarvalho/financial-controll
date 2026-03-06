@@ -9,7 +9,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     fs: {
-      allow: ["./client", "./shared"],
+      // Allow serving files from the project root, client, shared, and Vite's client
+      allow: [
+        path.resolve(__dirname),
+        path.resolve(__dirname, "client"),
+        path.resolve(__dirname, "shared"),
+        path.resolve(__dirname, "node_modules", "vite", "dist", "client"),
+      ],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "server/**"],
     },
   },

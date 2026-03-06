@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Search,
@@ -11,9 +11,15 @@ import {
   PiggyBank,
   CheckCircle2,
   Clock,
-  Calendar
+  Calendar,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +29,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -32,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -40,26 +46,80 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Category, Transaction } from "@shared/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getTransacoes, getCategorias, createTransaction } from "@/lib/api";
 import { toast } from "sonner";
 
 const MOCK_CATEGORIES: Category[] = [
-  { id: '1', name: 'Aluguel', rule: '50', type: 'expense', color: '#059669' },
-  { id: '2', name: 'Supermercado', rule: '50', type: 'expense', color: '#059669' },
-  { id: '3', name: 'Streaming', rule: '30', type: 'expense', color: '#10b981' },
-  { id: '4', name: 'Investimentos', rule: '20', type: 'expense', color: '#34d399' },
-  { id: '5', name: 'Salário', rule: '50', type: 'income' },
+  { id: "1", name: "Aluguel", rule: "50", type: "expense", color: "#059669" },
+  {
+    id: "2",
+    name: "Supermercado",
+    rule: "50",
+    type: "expense",
+    color: "#059669",
+  },
+  { id: "3", name: "Streaming", rule: "30", type: "expense", color: "#10b981" },
+  {
+    id: "4",
+    name: "Investimentos",
+    rule: "20",
+    type: "expense",
+    color: "#34d399",
+  },
+  { id: "5", name: "Salário", rule: "50", type: "income" },
 ];
 
 const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: '1', description: 'Salário Mensal', amount: 5000, date: '2023-10-05', categoryId: '5', type: 'fixed', status: 'paid' },
-  { id: '2', description: 'Aluguel Outubro', amount: -1800, date: '2023-10-05', categoryId: '1', type: 'fixed', status: 'paid' },
-  { id: '3', description: 'Netflix', amount: -55.90, date: '2023-10-08', categoryId: '3', type: 'fixed', status: 'paid' },
-  { id: '4', description: 'Supermercado BH', amount: -450.25, date: '2023-10-10', categoryId: '2', type: 'one-time', status: 'pending' },
-  { id: '5', description: 'Combustível', amount: -200, date: '2023-09-15', categoryId: '2', type: 'one-time', status: 'paid' },
+  {
+    id: "1",
+    description: "Salário Mensal",
+    amount: 5000,
+    date: "2023-10-05",
+    categoryId: "5",
+    type: "fixed",
+    status: "paid",
+  },
+  {
+    id: "2",
+    description: "Aluguel Outubro",
+    amount: -1800,
+    date: "2023-10-05",
+    categoryId: "1",
+    type: "fixed",
+    status: "paid",
+  },
+  {
+    id: "3",
+    description: "Netflix",
+    amount: -55.9,
+    date: "2023-10-08",
+    categoryId: "3",
+    type: "fixed",
+    status: "paid",
+  },
+  {
+    id: "4",
+    description: "Supermercado BH",
+    amount: -450.25,
+    date: "2023-10-10",
+    categoryId: "2",
+    type: "one-time",
+    status: "pending",
+  },
+  {
+    id: "5",
+    description: "Combustível",
+    amount: -200,
+    date: "2023-09-15",
+    categoryId: "2",
+    type: "one-time",
+    status: "paid",
+  },
 ];
 
 const MONTHS = [
@@ -80,85 +140,134 @@ const MONTHS = [
 export default function Finances() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString());
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [selectedMonth, setSelectedMonth] = useState(
+    new Date().getMonth().toString(),
+  );
+  const { data: transactionsData } = useQuery({
+    queryKey: ["transacoes"],
+    queryFn: getTransacoes,
+  });
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categorias"],
+    queryFn: getCategorias,
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>(
+    transactionsData ?? MOCK_TRANSACTIONS,
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+  const addTransaction = useMutation({
+    mutationFn: createTransaction,
+    onMutate: async (newTx: any) => {
+      await queryClient.cancelQueries({ queryKey: ["transacoes"] });
+      const previous = queryClient.getQueryData(["transacoes"]);
+      setTransactions((current) => [newTx, ...(current ?? [])]);
+      return { previous };
+    },
+    onError: (err, newTx, context: any) => {
+      setTransactions(context?.previous ?? MOCK_TRANSACTIONS);
+      toast.error("Erro ao salvar transação.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["transacoes"] });
+    },
+  });
 
   // Form State
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [categoryId, setCategoryId] = useState("");
   const [type, setType] = useState<"fixed" | "one-time">("one-time");
 
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
+    return transactions.filter((t) => {
       const transactionDate = new Date(t.date);
-      const matchesMonth = transactionDate.getMonth().toString() === selectedMonth;
-      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesTab = activeTab === "all" ||
-                        (activeTab === "income" && t.amount > 0) ||
-                        (activeTab === "expense" && t.amount < 0);
+      const matchesMonth =
+        transactionDate.getMonth().toString() === selectedMonth;
+      const matchesSearch = t.description
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesTab =
+        activeTab === "all" ||
+        (activeTab === "income" && t.amount > 0) ||
+        (activeTab === "expense" && t.amount < 0);
       return matchesMonth && matchesSearch && matchesTab;
     });
   }, [transactions, searchTerm, activeTab, selectedMonth]);
 
   const stats = useMemo(() => {
     const income = filteredTransactions
-      .filter(t => t.amount > 0)
+      .filter((t) => t.amount > 0)
       .reduce((acc, t) => acc + t.amount, 0);
-    const expenses = Math.abs(filteredTransactions
-      .filter(t => t.amount < 0)
-      .reduce((acc, t) => acc + t.amount, 0));
+    const expenses = Math.abs(
+      filteredTransactions
+        .filter((t) => t.amount < 0)
+        .reduce((acc, t) => acc + t.amount, 0),
+    );
     return {
       income,
       expenses,
-      balance: income - expenses
+      balance: income - expenses,
     };
   }, [filteredTransactions]);
 
-  const handleAddTransaction = () => {
+  const handleAddTransaction = async () => {
     if (!desc || !amount || !date || !categoryId) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
-    const cat = MOCK_CATEGORIES.find(c => c.id === categoryId);
+    const cat = (categoriesData ?? MOCK_CATEGORIES).find(
+      (c: any) => c.id === categoryId,
+    );
     const numericAmount = parseFloat(amount);
-    const finalAmount = cat?.type === 'expense' ? -Math.abs(numericAmount) : Math.abs(numericAmount);
+    const finalAmount =
+      cat?.type === "expense"
+        ? -Math.abs(numericAmount)
+        : Math.abs(numericAmount);
 
-    const newTransaction: Transaction = {
+    const newTransaction: any = {
+      // server may generate id; we include a temporary id for optimistic UI
       id: Math.random().toString(36).substr(2, 9),
       description: desc,
       amount: finalAmount,
       date: date,
       categoryId: categoryId,
       type: type,
-      status: 'paid'
+      status: "paid",
     };
 
-    setTransactions([newTransaction, ...transactions]);
+    addTransaction.mutate(newTransaction);
     setIsDialogOpen(false);
     resetForm();
-    toast.success("Transação adicionada com sucesso!");
+    toast.success("Transação enviada para salvamento...");
   };
 
   const resetForm = () => {
     setDesc("");
     setAmount("");
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(new Date().toISOString().split("T")[0]);
     setCategoryId("");
     setType("one-time");
   };
 
-  const getCategory = (id: string) => MOCK_CATEGORIES.find(c => c.id === id);
+  useEffect(() => {
+    if (transactionsData) setTransactions(transactionsData as any);
+  }, [transactionsData]);
+
+  const getCategory = (id: string) =>
+    (categoriesData ?? MOCK_CATEGORIES).find((c: any) => c.id === id);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Financeiro</h1>
-          <p className="text-muted-foreground">Gerencie suas receitas e despesas.</p>
+          <p className="text-muted-foreground">
+            Gerencie suas receitas e despesas.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
@@ -190,7 +299,9 @@ export default function Finances() {
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="desc" className="text-sm font-medium">Descrição</label>
+                  <label htmlFor="desc" className="text-sm font-medium">
+                    Descrição
+                  </label>
                   <Input
                     id="desc"
                     placeholder="Ex: Aluguel, Salário, etc."
@@ -200,7 +311,9 @@ export default function Finances() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <label htmlFor="amount" className="text-sm font-medium">Valor</label>
+                    <label htmlFor="amount" className="text-sm font-medium">
+                      Valor
+                    </label>
                     <Input
                       id="amount"
                       type="number"
@@ -210,7 +323,9 @@ export default function Finances() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <label htmlFor="date" className="text-sm font-medium">Data</label>
+                    <label htmlFor="date" className="text-sm font-medium">
+                      Data
+                    </label>
                     <Input
                       id="date"
                       type="date"
@@ -220,14 +335,18 @@ export default function Finances() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <label htmlFor="cat" className="text-sm font-medium">Categoria</label>
+                  <label htmlFor="cat" className="text-sm font-medium">
+                    Categoria
+                  </label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_CATEGORIES.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name} ({c.rule}%)</SelectItem>
+                      {MOCK_CATEGORIES.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} ({c.rule}%)
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -246,8 +365,18 @@ export default function Finances() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddTransaction}>Salvar</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={handleAddTransaction}
+                >
+                  Salvar
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -261,9 +390,14 @@ export default function Finances() {
               <TrendingUp className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-emerald-800">Receitas do Mês</p>
+              <p className="text-sm font-medium text-emerald-800">
+                Receitas do Mês
+              </p>
               <h3 className="text-2xl font-bold text-emerald-900">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.income)}
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(stats.income)}
               </h3>
             </div>
           </CardContent>
@@ -274,9 +408,14 @@ export default function Finances() {
               <TrendingDown className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-rose-800">Despesas do Mês</p>
+              <p className="text-sm font-medium text-rose-800">
+                Despesas do Mês
+              </p>
               <h3 className="text-2xl font-bold text-rose-900">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.expenses)}
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(stats.expenses)}
               </h3>
             </div>
           </CardContent>
@@ -287,9 +426,14 @@ export default function Finances() {
               <PiggyBank className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-blue-800">Saldo Disponível</p>
+              <p className="text-sm font-medium text-blue-800">
+                Saldo Disponível
+              </p>
               <h3 className="text-2xl font-bold text-blue-900">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.balance)}
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(stats.balance)}
               </h3>
             </div>
           </CardContent>
@@ -301,12 +445,14 @@ export default function Finances() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Histórico de Transações</CardTitle>
-              <CardDescription>Acompanhe todos os seus movimentos financeiros.</CardDescription>
+              <CardDescription>
+                Acompanhe todos os seus movimentos financeiros.
+              </CardDescription>
             </div>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Buscar por descrição..." 
+              <Input
+                placeholder="Buscar por descrição..."
                 className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -315,7 +461,11 @@ export default function Finances() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+          <Tabs
+            defaultValue="all"
+            className="w-full"
+            onValueChange={setActiveTab}
+          >
             <TabsList className="mb-4">
               <TabsTrigger value="all">Tudo</TabsTrigger>
               <TabsTrigger value="income">Receitas</TabsTrigger>
@@ -337,27 +487,40 @@ export default function Finances() {
                   {filteredTransactions.map((t) => {
                     const category = getCategory(t.categoryId);
                     return (
-                      <TableRow key={t.id} className="group transition-colors duration-200">
+                      <TableRow
+                        key={t.id}
+                        className="group transition-colors duration-200"
+                      >
                         <TableCell>
                           <div className="font-medium">{t.description}</div>
-                          <div className="text-xs text-muted-foreground capitalize">{t.type === 'fixed' ? 'Fixo' : 'Único'}</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            {t.type === "fixed" ? "Fixo" : "Único"}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category?.color || '#cbd5e1' }} />
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{
+                                backgroundColor: category?.color || "#cbd5e1",
+                              }}
+                            />
                             <span className="text-sm">{category?.name}</span>
                             {category?.rule && (
-                              <Badge variant="outline" className="text-[10px] h-4 py-0 font-normal">
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] h-4 py-0 font-normal"
+                              >
                                 Rule {category.rule}%
                               </Badge>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {new Date(t.date).toLocaleDateString('pt-BR')}
+                          {new Date(t.date).toLocaleDateString("pt-BR")}
                         </TableCell>
                         <TableCell>
-                          {t.status === 'paid' ? (
+                          {t.status === "paid" ? (
                             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-none flex w-fit items-center gap-1">
                               <CheckCircle2 className="h-3 w-3" />
                               Pago
@@ -369,14 +532,25 @@ export default function Finances() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className={cn(
-                          "text-right font-bold",
-                          t.amount > 0 ? "text-emerald-600" : "text-foreground"
-                        )}>
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
+                        <TableCell
+                          className={cn(
+                            "text-right font-bold",
+                            t.amount > 0
+                              ? "text-emerald-600"
+                              : "text-foreground",
+                          )}
+                        >
+                          {new Intl.NumberFormat("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }).format(t.amount)}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </TableCell>
