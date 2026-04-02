@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCategorias } from "@/lib/api";
 import {
   Plus,
@@ -47,36 +47,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Category } from "@shared/api";
+import { createCategoria } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const MOCK_CATEGORIES: Category[] = [
-  { id: "1", name: "Aluguel", rule: "50", type: "expense", color: "#059669" },
-  {
-    id: "2",
-    name: "Supermercado",
-    rule: "50",
-    type: "expense",
-    color: "#059669",
-  },
-  { id: "3", name: "Streaming", rule: "30", type: "expense", color: "#10b981" },
-  {
-    id: "4",
-    name: "Investimentos",
-    rule: "20",
-    type: "expense",
-    color: "#34d399",
-  },
-  { id: "5", name: "Salário", rule: "50", type: "income", color: "#0ea5e9" },
-  {
-    id: "6",
-    name: "Restaurantes",
-    rule: "30",
-    type: "expense",
-    color: "#10b981",
-  },
-  { id: "7", name: "Saúde", rule: "50", type: "expense", color: "#059669" },
-];
+// Use API-provided categories only; remove local mock data.
 
 const COLOR_OPTIONS = [
   { name: "Emerald", value: "#059669" },
@@ -92,13 +67,14 @@ const COLOR_OPTIONS = [
 ];
 
 export default function CategoriesPage() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const { data: categoriesData } = useQuery({
     queryKey: ["categorias"],
     queryFn: getCategorias,
   });
   const [categories, setCategories] = useState<Category[]>(
-    categoriesData ?? MOCK_CATEGORIES,
+    categoriesData ?? [],
   );
   useEffect(() => {
     if (categoriesData) setCategories(categoriesData as any);
@@ -115,24 +91,30 @@ export default function CategoriesPage() {
     c.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newName) {
       toast.error("Por favor, preencha o nome da categoria.");
       return;
     }
 
-    const newCategory: Category = {
-      id: Math.random().toString(36).substr(2, 9),
+    const payload: Partial<Category> = {
       name: newName,
       type: newType,
       rule: newRule as "50" | "30" | "20",
       color: newColor,
     };
 
-    setCategories([...categories, newCategory]);
-    setIsDialogOpen(false);
-    resetForm();
-    toast.success("Categoria adicionada com sucesso!");
+    try {
+      const created = await createCategoria(payload);
+      // API returns the created category; append to local state
+      setCategories((prev) => [...prev, created]);
+      queryClient.invalidateQueries({ queryKey: ["categorias"] });
+      setIsDialogOpen(false);
+      resetForm();
+      toast.success("Categoria adicionada com sucesso!");
+    } catch (err: any) {
+      toast.error("Erro ao salvar categoria: " + (err?.message ?? String(err)));
+    }
   };
 
   const resetForm = () => {

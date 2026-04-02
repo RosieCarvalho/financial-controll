@@ -1,13 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import {
-  Plus,
   Search,
-  Filter,
   TrendingUp,
   TrendingDown,
   MoreVertical,
-  Pencil,
-  Trash2,
   PiggyBank,
   CheckCircle2,
   Clock,
@@ -31,15 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -49,78 +36,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Category, Transaction } from "@shared/api";
+import { Transaction, Category } from "@shared/api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTransacoes, getCategorias, createTransaction } from "@/lib/api";
+import {
+  getTransacoes,
+  getCategorias,
+  createTransaction,
+  getTypesStatusTransaction,
+} from "@/lib/api";
 import { toast } from "sonner";
-
-const MOCK_CATEGORIES: Category[] = [
-  { id: "1", name: "Aluguel", rule: "50", type: "expense", color: "#059669" },
-  {
-    id: "2",
-    name: "Supermercado",
-    rule: "50",
-    type: "expense",
-    color: "#059669",
-  },
-  { id: "3", name: "Streaming", rule: "30", type: "expense", color: "#10b981" },
-  {
-    id: "4",
-    name: "Investimentos",
-    rule: "20",
-    type: "expense",
-    color: "#34d399",
-  },
-  { id: "5", name: "Salário", rule: "50", type: "income" },
-];
-
-const MOCK_TRANSACTIONS: Transaction[] = [
-  {
-    id: "1",
-    description: "Salário Mensal",
-    amount: 5000,
-    date: "2023-10-05",
-    categoryId: "5",
-    type: "fixed",
-    status: "paid",
-  },
-  {
-    id: "2",
-    description: "Aluguel Outubro",
-    amount: -1800,
-    date: "2023-10-05",
-    categoryId: "1",
-    type: "fixed",
-    status: "paid",
-  },
-  {
-    id: "3",
-    description: "Netflix",
-    amount: -55.9,
-    date: "2023-10-08",
-    categoryId: "3",
-    type: "fixed",
-    status: "paid",
-  },
-  {
-    id: "4",
-    description: "Supermercado BH",
-    amount: -450.25,
-    date: "2023-10-10",
-    categoryId: "2",
-    type: "one-time",
-    status: "pending",
-  },
-  {
-    id: "5",
-    description: "Combustível",
-    amount: -200,
-    date: "2023-09-15",
-    categoryId: "2",
-    type: "one-time",
-    status: "paid",
-  },
-];
+import { NewTransactionDialog } from "./components/NewTransactionDialog";
+import { DeleteTransactionModal } from "./components/DeleteTransactionModal";
+import { ta, tr } from "date-fns/locale";
 
 const MONTHS = [
   { value: "0", label: "Janeiro" },
@@ -143,18 +70,27 @@ export default function Finances() {
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().getMonth().toString(),
   );
+
   const { data: transactionsData } = useQuery({
     queryKey: ["transacoes"],
     queryFn: getTransacoes,
   });
+  const transactionsDataValue = transactionsData?.data ?? [];
+
   const { data: categoriesData } = useQuery({
     queryKey: ["categorias"],
     queryFn: getCategorias,
   });
+  const categoriesDataValue = categoriesData?.data ?? [];
+  const categoriesDataFinal = categoriesDataValue as Category[];
+
   const [transactions, setTransactions] = useState<Transaction[]>(
-    transactionsData ?? MOCK_TRANSACTIONS,
+    transactionsDataValue,
   );
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const deleteTransaction = (id: string) => {
+    setTransactions((current) => current.filter((t) => t.id !== id));
+  };
 
   const queryClient = useQueryClient();
   const addTransaction = useMutation({
@@ -165,8 +101,8 @@ export default function Finances() {
       setTransactions((current) => [newTx, ...(current ?? [])]);
       return { previous };
     },
-    onError: (err, newTx, context: any) => {
-      setTransactions(context?.previous ?? MOCK_TRANSACTIONS);
+    onError: (_err, _newTx, context: any) => {
+      setTransactions(context?.previous ?? []);
       toast.error("Erro ao salvar transação.");
     },
     onSettled: () => {
@@ -174,36 +110,55 @@ export default function Finances() {
     },
   });
 
-  // Form State
-  const [desc, setDesc] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [categoryId, setCategoryId] = useState("");
-  const [type, setType] = useState<"fixed" | "one-time">("one-time");
+  useEffect(() => {
+    if (transactionsData)
+      setTransactions(transactionsData as unknown as Transaction[]);
+  }, [transactionsData]);
 
+  const getCategory = (id: string) => {
+    console.log(`Getting category for id ${id}`);
+    const category = categoriesDataFinal.find((c: Category) => c.id === id);
+    if (category) {
+      console.log(`Found category for id ${id}: ${JSON.stringify(category)}`);
+    } else {
+      console.log(`Category not found for id ${id}`);
+    }
+    return category ?? null;
+  };
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
       const transactionDate = new Date(t.date);
       const matchesMonth =
         transactionDate.getMonth().toString() === selectedMonth;
-      const matchesSearch = t.description
+      const matchesSearch = (t.description ?? "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       const matchesTab =
         activeTab === "all" ||
-        (activeTab === "income" && t.amount > 0) ||
-        (activeTab === "expense" && t.amount < 0);
-      return matchesMonth && matchesSearch && matchesTab;
+        (activeTab === "income" &&
+          getCategory(t.categoryId)?.type === "income") ||
+        (activeTab === "expense" &&
+          getCategory(t.categoryId)?.type === "expense");
+      return (
+        (matchesMonth && matchesSearch && matchesTab) ||
+        (t.type === "fixed" && matchesTab)
+      );
     });
   }, [transactions, searchTerm, activeTab, selectedMonth]);
-
+  console.log(transactions);
   const stats = useMemo(() => {
-    const income = filteredTransactions
-      .filter((t) => t.amount > 0)
+    const income = transactions
+      .filter((t) => {
+        const category = getCategory(t.categoryId);
+        return category?.type === "income";
+      })
       .reduce((acc, t) => acc + t.amount, 0);
     const expenses = Math.abs(
-      filteredTransactions
-        .filter((t) => t.amount < 0)
+      transactions
+        .filter((t) => {
+          const category = getCategory(t.categoryId);
+          return category?.type === "expense";
+        })
         .reduce((acc, t) => acc + t.amount, 0),
     );
     return {
@@ -213,52 +168,21 @@ export default function Finances() {
     };
   }, [filteredTransactions]);
 
-  const handleAddTransaction = async () => {
-    if (!desc || !amount || !date || !categoryId) {
-      toast.error("Por favor, preencha todos os campos obrigatórios.");
-      return;
-    }
-
-    const cat = (categoriesData ?? MOCK_CATEGORIES).find(
-      (c: any) => c.id === categoryId,
-    );
-    const numericAmount = parseFloat(amount);
-    const finalAmount =
-      cat?.type === "expense"
-        ? -Math.abs(numericAmount)
-        : Math.abs(numericAmount);
-
+  const handleAddTransaction = (tx: {
+    description: string;
+    amount: number;
+    date: string;
+    categoryId: string;
+    type: "fixed" | "one-time";
+    status: "pending" | "paid" | "received";
+  }) => {
     const newTransaction: any = {
-      // server may generate id; we include a temporary id for optimistic UI
       id: Math.random().toString(36).substr(2, 9),
-      description: desc,
-      amount: finalAmount,
-      date: date,
-      categoryId: categoryId,
-      type: type,
-      status: "paid",
+      ...tx,
     };
-
     addTransaction.mutate(newTransaction);
-    setIsDialogOpen(false);
-    resetForm();
     toast.success("Transação enviada para salvamento...");
   };
-
-  const resetForm = () => {
-    setDesc("");
-    setAmount("");
-    setDate(new Date().toISOString().split("T")[0]);
-    setCategoryId("");
-    setType("one-time");
-  };
-
-  useEffect(() => {
-    if (transactionsData) setTransactions(transactionsData as any);
-  }, [transactionsData]);
-
-  const getCategory = (id: string) =>
-    (categoriesData ?? MOCK_CATEGORIES).find((c: any) => c.id === id);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -283,103 +207,10 @@ export default function Finances() {
               ))}
             </SelectContent>
           </Select>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Transação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Nova Transação</DialogTitle>
-                <DialogDescription>
-                  Adicione uma nova receita ou despesa ao seu controle.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="desc" className="text-sm font-medium">
-                    Descrição
-                  </label>
-                  <Input
-                    id="desc"
-                    placeholder="Ex: Aluguel, Salário, etc."
-                    value={desc}
-                    onChange={(e) => setDesc(e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="amount" className="text-sm font-medium">
-                      Valor
-                    </label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="date" className="text-sm font-medium">
-                      Data
-                    </label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="cat" className="text-sm font-medium">
-                    Categoria
-                  </label>
-                  <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MOCK_CATEGORIES.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name} ({c.rule}%)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <label className="text-sm font-medium">Tipo</label>
-                  <Select value={type} onValueChange={(v: any) => setType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="one-time">Único</SelectItem>
-                      <SelectItem value="fixed">Fixo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={handleAddTransaction}
-                >
-                  Salvar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <NewTransactionDialog
+            categories={categoriesData ?? []}
+            onSubmit={handleAddTransaction}
+          />
         </div>
       </div>
 
@@ -546,13 +377,10 @@ export default function Finances() {
                           }).format(t.amount)}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
+                          <DeleteTransactionModal
+                            transactionId={t.id}
+                            onSuccess={() => deleteTransaction(t.id)}
+                          />
                         </TableCell>
                       </TableRow>
                     );

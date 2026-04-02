@@ -2,13 +2,13 @@
  * Shared types for the Financial Control System
  */
 
-export type FinancialRule = '50' | '30' | '20';
+export type FinancialRule = "50" | "30" | "20";
 
 export interface Category {
   id: string;
   name: string;
   rule: FinancialRule;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   color?: string;
 }
 
@@ -18,8 +18,8 @@ export interface Transaction {
   amount: number;
   date: string;
   categoryId: string;
-  type: 'fixed' | 'one-time' | 'installment';
-  status: 'pending' | 'paid';
+  type: "fixed" | "one-time" | "installment";
+  status: "pending" | "paid";
   cashBoxId?: string; // If coming from a specific box
   cardId?: string; // If paid via card
   thirdPartyId?: string; // If it's a third party purchase
@@ -36,21 +36,39 @@ export interface CashBox {
     id: string;
     amount: number;
     date: string;
-    type: 'deposit' | 'withdrawal';
+    type: "deposit" | "withdrawal";
     description: string;
   }[];
 }
 
-export interface CreditCard {
-  id: string;
-  name: string;
-  limit: number;
-  closingDay: number;
-  dueDay: number;
-  currentInvoice: number;
-  color: string;
+export interface AccountCard {
+  caixa_id?: null;
+  cartao_id?: string;
+  categoria_id?: null;
+  compra_terceiros_id?: null;
+  created_at?: string;
+  data?: string;
+  descricao?: string;
+  id?: string;
+  parcela_atual?: number;
+  parcelas_total?: number;
+  status?: "pending";
+  tipo?: "installment";
+  updated_at?: string;
+  valor?: number;
 }
-
+export interface Card {
+  cor: string;
+  created_at: string;
+  dia_fechamento: number;
+  dia_vencimento: number;
+  fatura_atual: number;
+  id: string;
+  limite: number;
+  nome: string;
+  total_transacoes: number;
+  updated_at: string;
+}
 export interface ThirdPartyPurchase {
   id: string;
   personName: string;
@@ -69,7 +87,7 @@ export interface FuturePlan {
   installments: number;
   plannedMonth: number; // 0-11 for month index
   plannedYear: number;
-  status: 'pending' | 'completed';
+  status: "pending" | "completed";
 }
 
 export interface DashboardData {

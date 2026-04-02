@@ -10,7 +10,9 @@ const isUuid = (v: any) =>
 
 export const listCartoes: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from("cartoes_credito").select("*");
+    const { data, error } = await supabase
+      .from("cartoes_com_fatura_total")
+      .select("*");
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -22,7 +24,7 @@ export const getCartao: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
     const { data, error } = await supabase
-      .from("cartoes_credito")
+      .from("cartoes_com_fatura_total")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -57,6 +59,27 @@ export const createCartao: RequestHandler = async (req, res) => {
       .single();
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+/**
+ * Returns a list of all transactions for a given credit card
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ * @returns {Promise<Response>} - A promise that resolves to an Express response object
+ */
+export const listarFaturaCartao: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabase
+      .from("transacoes")
+      .select("*")
+      .eq("cartao_id", id)
+      .eq("status", "pending");
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }

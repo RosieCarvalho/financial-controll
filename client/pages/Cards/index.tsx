@@ -10,6 +10,7 @@ import {
   getPlanosFuturos as _getPlanos,
   createCartao,
   createCompraTerceiro,
+  getComprasTerceiros,
 } from "@/lib/api";
 import {
   CreditCard,
@@ -34,15 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { AddCardOrThirdPartyDialog } from "./components/AddCardOrThirdPartyDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -56,49 +49,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-const MOCK_CARDS = [
-  {
-    id: "1",
-    name: "Nubank",
-    limit: 15000,
-    used: 2500.5,
-    dueDay: 12,
-    closingDay: 5,
-    color: "bg-purple-600",
-  },
-  {
-    id: "2",
-    name: "Inter",
-    limit: 5000,
-    used: 1200.2,
-    dueDay: 15,
-    closingDay: 8,
-    color: "bg-orange-500",
-  },
-];
-
-const MOCK_THIRD_PARTY = [
-  {
-    id: "t1",
-    person: "João Silva",
-    desc: "Monitor Gamer",
-    amount: 1500,
-    installments: 10,
-    paid: 3,
-    cardId: "1",
-    date: "2023-08-10",
-  },
-  {
-    id: "t2",
-    person: "Maria Oliveira",
-    desc: "Tênis Corrida",
-    amount: 350,
-    installments: 2,
-    paid: 1,
-    cardId: "2",
-    date: "2023-09-05",
-  },
-];
+// Use API-provided cards and third-party purchases; no local mocks.
 
 const COLORS = [
   { name: "Roxo", value: "bg-purple-600" },
@@ -117,10 +68,10 @@ export default function CardsPage() {
   });
   const { data: thirdPartyData } = useQuery({
     queryKey: ["compras_terceiros"],
-    queryFn: () => fetch("/api/compras_terceiros").then((r) => r.json()),
+    queryFn: getComprasTerceiros,
   });
-  const [cards, setCards] = useState(cardsData ?? []);
-  const [thirdParty, setThirdParty] = useState(thirdPartyData ?? []);
+  const [cards, setCards] = useState(cardsData?.data ?? []);
+  const [thirdParty, setThirdParty] = useState(thirdPartyData?.data ?? []);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [addType, setAddType] = useState<"card" | "third-party">("card");
 
@@ -231,11 +182,11 @@ export default function CardsPage() {
 
   // sync state when queries load
   useEffect(() => {
-    if (cardsData) setCards(cardsData as any);
+    if (cardsData?.data) setCards(cardsData.data);
   }, [cardsData]);
 
   useEffect(() => {
-    if (thirdPartyData) setThirdParty(thirdPartyData as any);
+    if (thirdPartyData?.data) setThirdParty(thirdPartyData.data);
   }, [thirdPartyData]);
 
   const queryClient = useQueryClient();
@@ -249,7 +200,7 @@ export default function CardsPage() {
       return { previous };
     },
     onError: (err, newCard, context: any) => {
-      setCards(context?.previous ?? MOCK_CARDS);
+      setCards(context?.previous ?? []);
       toast.error("Erro ao criar cartão.");
     },
     onSettled: () => {
@@ -266,7 +217,7 @@ export default function CardsPage() {
       return { previous };
     },
     onError: (err, newItem, context: any) => {
-      setThirdParty(context?.previous ?? MOCK_THIRD_PARTY);
+      setThirdParty(context?.previous ?? []);
       toast.error("Erro ao registrar compra de terceiro.");
     },
     onSettled: () => {
@@ -293,196 +244,36 @@ export default function CardsPage() {
             <Info className="h-4 w-4" />
             Como funciona?
           </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center gap-2"
-                onClick={() =>
-                  setAddType(activeTab === "my-cards" ? "card" : "third-party")
-                }
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar Novo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {addType === "card"
-                    ? "Novo Cartão"
-                    : "Nova Compra de Terceiro"}
-                </DialogTitle>
-                <DialogDescription>
-                  {addType === "card"
-                    ? "Adicione um novo cartão de crédito para gerenciar."
-                    : "Registre uma compra feita por outra pessoa no seu cartão."}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <Tabs
-                  value={addType}
-                  onValueChange={(v) => setAddType(v as any)}
-                >
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="card">Cartão</TabsTrigger>
-                    <TabsTrigger value="third-party">Terceiro</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="card" className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="card-name">Nome do Cartão</Label>
-                      <Input
-                        id="card-name"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Ex: Nubank, Inter, Visa..."
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="card-limit">Limite Total</Label>
-                        <Input
-                          id="card-limit"
-                          type="number"
-                          value={cardLimit}
-                          onChange={(e) => setCardLimit(e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Cor</Label>
-                        <Select value={cardColor} onValueChange={setCardColor}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {COLORS.map((c) => (
-                              <SelectItem key={c.value} value={c.value}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={cn(
-                                      "w-3 h-3 rounded-full",
-                                      c.value,
-                                    )}
-                                  />
-                                  {c.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="due-day">Dia do Vencimento</Label>
-                        <Input
-                          id="due-day"
-                          type="number"
-                          min="1"
-                          max="31"
-                          value={cardDueDay}
-                          onChange={(e) => setCardDueDay(e.target.value)}
-                          placeholder="Ex: 10"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="closing-day">Dia do Fechamento</Label>
-                        <Input
-                          id="closing-day"
-                          type="number"
-                          min="1"
-                          max="31"
-                          value={cardClosingDay}
-                          onChange={(e) => setCardClosingDay(e.target.value)}
-                          placeholder="Ex: 03"
-                        />
-                      </div>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="third-party" className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="tp-person">Nome da Pessoa</Label>
-                      <Input
-                        id="tp-person"
-                        value={tpPerson}
-                        onChange={(e) => setTpPerson(e.target.value)}
-                        placeholder="Quem comprou?"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="tp-desc">Descrição do Item</Label>
-                      <Input
-                        id="tp-desc"
-                        value={tpDesc}
-                        onChange={(e) => setTpDesc(e.target.value)}
-                        placeholder="O que foi comprado?"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="tp-amount">Valor Total</Label>
-                        <Input
-                          id="tp-amount"
-                          type="number"
-                          value={tpAmount}
-                          onChange={(e) => setTpAmount(e.target.value)}
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="tp-installments">Parcelas</Label>
-                        <Input
-                          id="tp-installments"
-                          type="number"
-                          value={tpInstallments}
-                          onChange={(e) => setTpInstallments(e.target.value)}
-                          placeholder="Ex: 10"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Cartão Utilizado</Label>
-                      <Select value={tpCardId} onValueChange={setTpCardId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um cartão" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cards.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    resetForms();
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={
-                    addType === "card" ? handleAddCard : handleAddThirdParty
-                  }
-                >
-                  Salvar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <AddCardOrThirdPartyDialog
+            isOpen={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            addType={addType}
+            setAddType={setAddType}
+            cardName={cardName}
+            setCardName={setCardName}
+            cardLimit={cardLimit}
+            setCardLimit={setCardLimit}
+            cardDueDay={cardDueDay}
+            setCardDueDay={setCardDueDay}
+            cardClosingDay={cardClosingDay}
+            setCardClosingDay={setCardClosingDay}
+            cardColor={cardColor}
+            setCardColor={setCardColor}
+            tpPerson={tpPerson}
+            setTpPerson={setTpPerson}
+            tpDesc={tpDesc}
+            setTpDesc={setTpDesc}
+            tpAmount={tpAmount}
+            setTpAmount={setTpAmount}
+            tpInstallments={tpInstallments}
+            setTpInstallments={setTpInstallments}
+            tpCardId={tpCardId}
+            setTpCardId={setTpCardId}
+            handleAddCard={handleAddCard}
+            handleAddThirdParty={handleAddThirdParty}
+            resetForms={resetForms}
+            cards={cards}
+          />
         </div>
       </div>
 
@@ -498,7 +289,7 @@ export default function CardsPage() {
 
         <TabsContent value="my-cards" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {cards.map((card) => (
+            {cardsData?.map((card) => (
               <Card
                 key={card.id}
                 className="border-none shadow-sm bg-card/50 backdrop-blur-md overflow-hidden group"
@@ -509,7 +300,7 @@ export default function CardsPage() {
                     <div
                       className={cn(
                         "p-3 rounded-xl text-white shadow-md",
-                        card.color,
+                        card.cor,
                       )}
                     >
                       <CreditCard className="h-6 w-6" />
@@ -517,7 +308,7 @@ export default function CardsPage() {
                     <div>
                       <CardTitle className="text-xl">{card.name}</CardTitle>
                       <CardDescription>
-                        Vencimento dia {card.dueDay}
+                        Vencimento dia {card.dia_vencimento}
                       </CardDescription>
                     </div>
                   </div>
@@ -525,7 +316,7 @@ export default function CardsPage() {
                     variant="outline"
                     className="text-[10px] h-5 bg-secondary/50"
                   >
-                    Fecha dia {card.closingDay}
+                    Fecha dia {card.dia_fechamento}
                   </Badge>
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -538,7 +329,7 @@ export default function CardsPage() {
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",
-                        }).format(card.used)}
+                        }).format(card.total_transacoes)}
                       </h3>
                     </div>
                     <div className="text-right">
@@ -549,17 +340,22 @@ export default function CardsPage() {
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",
-                        }).format(card.limit - card.used)}
+                        }).format(card.limite - card.total_transacoes)}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-medium">
                       <span>Uso do Limite</span>
-                      <span>{Math.round((card.used / card.limit) * 100)}%</span>
+                      <span>
+                        {Math.round(
+                          (card.total_transacoes / card.limite) * 100,
+                        )}
+                        %
+                      </span>
                     </div>
                     <Progress
-                      value={(card.used / card.limit) * 100}
+                      value={(card.total_transacoes / card.limite) * 100}
                       className="h-2"
                     />
                   </div>

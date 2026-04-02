@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { getPlanosFuturos } from "@/lib/api";
 import {
   Plus,
@@ -45,34 +44,10 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FuturePlan } from "@shared/api";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { createPlanoFuturo, getDashboard } from "@/lib/api";
 
-const MOCK_MONTHLY_STATS = {
-  avgIncome: 8500,
-  avgExpenses: 4200,
-  avgSurplus: 4300,
-  currentBalance: 3440, // Based on previous session dashboard
-};
-
-const MOCK_PLANS: FuturePlan[] = [
-  {
-    id: "1",
-    itemName: "MacBook Pro M3",
-    totalValue: 12000,
-    installments: 12,
-    plannedMonth: 10, // November
-    plannedYear: 2023,
-    status: "pending",
-  },
-  {
-    id: "2",
-    itemName: "Viagem para Argentina",
-    totalValue: 5000,
-    installments: 5,
-    plannedMonth: 0, // Janeiro
-    plannedYear: 2024,
-    status: "pending",
-  },
-];
+// Fetch dashboard for derived monthly stats; no local mocks for plans.
 
 const MONTHS = [
   "Janeiro",
@@ -90,11 +65,16 @@ const MONTHS = [
 ];
 
 export default function FuturePlans() {
+  const queryClient = useQueryClient();
   const { data: plansData } = useQuery({
     queryKey: ["planos_futuros"],
     queryFn: getPlanosFuturos,
   });
-  const [plans, setPlans] = useState<FuturePlan[]>(plansData ?? MOCK_PLANS);
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: getDashboard,
+  });
+  const [plans, setPlans] = useState<FuturePlan[]>(plansData ?? []);
   useEffect(() => {
     if (plansData) setPlans(plansData as any);
   }, [plansData]);
@@ -131,9 +111,18 @@ export default function FuturePlans() {
       (startYear - currentYear) * 12 + (startMonth - currentMonth);
 
     // Estimated balance by the planned month
+    const monthlyStats = {
+      avgSurplus: Math.max(
+        0,
+        (dashboard?.totalIncome ?? 0) - (dashboard?.totalExpenses ?? 0),
+      ),
+      avgExpenses: dashboard?.totalExpenses ?? 0,
+      currentBalance: dashboard?.balance ?? 0,
+    };
+
     const estimatedBalanceAtStart =
-      MOCK_MONTHLY_STATS.currentBalance +
-      MOCK_MONTHLY_STATS.avgSurplus * Math.max(0, monthsWait);
+      monthlyStats.currentBalance +
+      monthlyStats.avgSurplus * Math.max(0, monthsWait);
     const balanceAfterPurchase =
       estimatedBalanceAtStart - (inst === 1 ? totalVal : installmentVal);
 
@@ -142,8 +131,8 @@ export default function FuturePlans() {
     // Or if one-time purchase leaves more than 1 month of expenses in balance
     const isComfortable =
       inst > 1
-        ? installmentVal < MOCK_MONTHLY_STATS.avgSurplus * 0.4
-        : totalVal < estimatedBalanceAtStart - MOCK_MONTHLY_STATS.avgExpenses;
+        ? installmentVal < monthlyStats.avgSurplus * 0.4
+        : totalVal < estimatedBalanceAtStart - monthlyStats.avgExpenses;
 
     // Suggest a month: if not comfortable, suggest when it will be
     let suggestedMonth = startMonth;
@@ -155,7 +144,7 @@ export default function FuturePlans() {
         // In this simple mock, if it's not comfortable now, it won't be later unless income increases
         // But let's suggest waiting for a higher balance buffer
         const monthsBuffer = Math.ceil(
-          totalVal / MOCK_MONTHLY_STATS.avgSurplus,
+          monthlyStats.avgSurplus > 0 ? totalVal / monthlyStats.avgSurplus : 0,
         );
         const suggestedDate = new Date();
         suggestedDate.setMonth(currentMonth + monthsBuffer);
@@ -163,10 +152,12 @@ export default function FuturePlans() {
         suggestedYear = suggestedDate.getFullYear();
       } else {
         const monthsBuffer = Math.ceil(
-          (totalVal +
-            MOCK_MONTHLY_STATS.avgExpenses -
-            MOCK_MONTHLY_STATS.currentBalance) /
-            MOCK_MONTHLY_STATS.avgSurplus,
+          monthlyStats.avgSurplus > 0
+            ? (totalVal +
+                monthlyStats.avgExpenses -
+                monthlyStats.currentBalance) /
+                monthlyStats.avgSurplus
+            : 0,
         );
         const suggestedDate = new Date();
         suggestedDate.setMonth(currentMonth + monthsBuffer);
@@ -189,8 +180,7 @@ export default function FuturePlans() {
       return;
     }
 
-    const newPlan: FuturePlan = {
-      id: Math.random().toString(36).substr(2, 9),
+    const payload: Partial<FuturePlan> = {
       itemName,
       totalValue: parseFloat(totalValue),
       installments: parseInt(installments),
@@ -199,10 +189,7 @@ export default function FuturePlans() {
       status: "pending",
     };
 
-    setPlans([...plans, newPlan]);
-    setIsDialogOpen(false);
-    resetForm();
-    toast.success("Plano de compra adicionado!");
+    createPlanMutation.mutate(payload);
   };
 
   const resetForm = () => {
@@ -212,6 +199,23 @@ export default function FuturePlans() {
     setPlannedMonth(new Date().getMonth().toString());
     setPlannedYear(new Date().getFullYear().toString());
   };
+
+  const createPlanMutation = useMutation({
+    mutationFn: createPlanoFuturo,
+    onMutate: async (newPlan: any) => {
+      await queryClient.cancelQueries({ queryKey: ["planos_futuros"] });
+      const previous = queryClient.getQueryData(["planos_futuros"]);
+      setPlans((p) => [...(p ?? []), newPlan]);
+      return { previous };
+    },
+    onError: (err, newPlan, context: any) => {
+      setPlans(context?.previous ?? []);
+      toast.error("Erro ao criar plano.");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["planos_futuros"] });
+    },
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

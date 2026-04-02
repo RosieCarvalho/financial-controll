@@ -62,85 +62,7 @@ const MONTHS = [
   { value: "11", label: "Dezembro" },
 ];
 
-const MOCK_DATA = {
-  summary: {
-    income: 8500,
-    expenses: 4200,
-    balance: 4300,
-    savings: 1200,
-  },
-  rule503020: [
-    { name: "Essenciais (50%)", value: 2500, limit: 4250, color: "#059669" },
-    { name: "Desejos (30%)", value: 1200, limit: 2550, color: "#10b981" },
-    { name: "Reserva (20%)", value: 500, limit: 1700, color: "#34d399" },
-  ],
-  upcomingCards: [
-    {
-      id: "1",
-      name: "Nubank",
-      due: "12/10",
-      amount: 1250.5,
-      status: "warning",
-    },
-    { id: "2", name: "Inter", due: "15/10", amount: 450.2, status: "default" },
-  ],
-  recentActivity: [
-    {
-      id: "1",
-      desc: "Mercado Livre",
-      amount: -150.0,
-      date: "2023-10-15",
-      cat: "Desejos",
-    },
-    {
-      id: "2",
-      desc: "Salário",
-      amount: 5000.0,
-      date: "2023-10-01",
-      cat: "Renda",
-    },
-    {
-      id: "3",
-      desc: "Aluguel",
-      amount: -1800.0,
-      date: "2023-10-05",
-      cat: "Essencial",
-    },
-    {
-      id: "4",
-      desc: "Posto de Gasolina",
-      amount: -200.0,
-      date: "2023-09-20",
-      cat: "Essencial",
-    },
-  ],
-  futurePlans: [
-    {
-      id: "1",
-      itemName: "MacBook Pro M3",
-      totalValue: 12000,
-      plannedMonth: 10,
-      plannedYear: 2023,
-      color: "#6366f1",
-    },
-    {
-      id: "2",
-      itemName: "Viagem Argentina",
-      totalValue: 5000,
-      plannedMonth: 0,
-      plannedYear: 2024,
-      color: "#f59e0b",
-    },
-    {
-      id: "3",
-      itemName: "iPhone 15",
-      totalValue: 8000,
-      plannedMonth: 2,
-      plannedYear: 2024,
-      color: "#06b6d4",
-    },
-  ],
-};
+// Dashboard and future plans are fetched from the API; no local mock data.
 
 const StatCard = ({ title, amount, icon: Icon, trend, color }: any) => (
   <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow duration-200 bg-card/50 backdrop-blur-md">
@@ -511,7 +433,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={MOCK_DATA.futurePlans}
+                      data={planos ?? []}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -519,7 +441,7 @@ export default function Dashboard() {
                       paddingAngle={5}
                       dataKey="totalValue"
                     >
-                      {MOCK_DATA.futurePlans.map((entry, index) => (
+                      {(planos ?? []).map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -540,7 +462,7 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               </div>
               <div className="space-y-3">
-                {MOCK_DATA.futurePlans.map((plan) => (
+                {(planos ?? []).map((plan: any) => (
                   <div
                     key={plan.id}
                     className="flex items-center justify-between text-sm"

@@ -18,14 +18,35 @@ api.interceptors.response.use(
 
 export const getDashboard = () => api.get("/api/dashboard");
 export const getCartoes = () => api.get("/api/cartoes");
+export const getCartao = (id: string) => api.get(`/api/cartoes/${id}`);
 export const getTransacoes = () => api.get("/api/transactions");
 export const getPlanosFuturos = () => api.get("/api/planos_futuros");
 export const getCategorias = () => api.get("/api/categorias");
 export const getCaixas = () => api.get("/api/caixas");
+export const getTypesStatusTransaction = () =>
+  api.get("/api/transactions/types-status");
+
+export const createCaixa = (payload: any) => api.post("/api/caixas", payload);
+export const getHistoricoCaixa = (id: string) =>
+  api.get(`/api/caixas/${id}/historico`);
+export const createPlanoFuturo = (payload: any) =>
+  api.post("/api/planos_futuros", payload);
+export const getComprasTerceiros = () => api.get("/api/compras_terceiros");
 
 export const createTransaction = (payload: any) =>
   api.post("/api/transactions", payload);
 
+export const updateTransaction = (payload: any) =>
+  api.put(`/api/transactions`, payload);
+export const createCategoria = (payload: any) =>
+  api.post("/api/categorias", payload);
+
 export const createCartao = (payload: any) => api.post("/api/cartoes", payload);
 export const createCompraTerceiro = (payload: any) =>
   api.post("/api/compras_terceiros", payload);
+
+export const deleteTransaction = (id: string) =>
+  api.delete(`/api/transactions/${id}`);
+
+export const getFaturaCartao = (id: string) =>
+  api.get(`/api/cartoes/${id}/fatura`);

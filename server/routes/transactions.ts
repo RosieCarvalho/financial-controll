@@ -10,9 +10,34 @@ const isUuid = (v: any) =>
 
 export const listTransactions: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from("transacoes").select("*");
+    const { data, error } = await supabase.from("transacoes").select(
+      `
+        *,
+        categorias (
+          nome,
+          tipo
+        )
+      `,
+    );
     if (error) return res.status(500).json({ error: error.message });
-    return res.json(data);
+    return res.json(
+      (data ?? []).map((r: any) => ({
+        id: r.id,
+        description: r.descricao,
+        amount: r.valor,
+        date: r.data,
+        categoryId: r.categoria_id,
+        categoryName: r.categorias?.nome ?? null,
+        categoryType: r.categorias?.tipo ?? null,
+        type: r.tipo,
+        status: r.status,
+        cashBoxId: r.caixa_id,
+        cardId: r.cartao_id,
+        thirdPartyId: r.compra_terceiros_id,
+        installmentsTotal: r.parcelas_total,
+        currentInstallment: r.parcela_atual,
+      })),
+    );
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }
@@ -54,6 +79,42 @@ export const createTransaction: RequestHandler = async (req, res) => {
       .single();
     if (error) return res.status(500).json({ error: error.message });
     return res.status(201).json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const getTypesStatusTransaction: RequestHandler = async (_req, res) => {
+  try {
+    const { data, error } = await supabase.rpc("get_transacao_status");
+    console.log("RPC Result:", { data, error });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const deleteTransaction: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase.from("transacoes").delete().eq("id", id);
+    console.log("err", error);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(204).send();
+  } catch (err: any) {
+    console.log("err", err);
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const updateTransactions: RequestHandler = async (req, res) => {
+  const payload = req.body as Partial<Transaction>;
+  try {
+    const { error } = await supabase
+      .from("transacoes")
+      .upsert(payload, { onConflict: "id" });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(204).send();
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }

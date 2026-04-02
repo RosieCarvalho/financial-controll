@@ -11,7 +11,7 @@ import Finances from "./pages/Finances";
 import Savings from "./pages/Savings";
 import Cards from "./pages/Cards";
 import Categories from "./pages/Categories";
-import CardDetails from "./pages/CardDetails";
+import CardDetails from "./pages/Cards/CardDetails";
 import FuturePlans from "./pages/FuturePlans";
 import NotFound from "./pages/NotFound";
 
@@ -24,7 +24,8 @@ const PlaceholderPage = ({ title }: { title: string }) => (
     <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
       <h1 className="text-3xl font-bold text-primary">{title}</h1>
       <p className="text-muted-foreground max-w-md text-center">
-        Este módulo está em desenvolvimento. Continue solicitando alterações para completar as funcionalidades do sistema financeiro.
+        Este módulo está em desenvolvimento. Continue solicitando alterações
+        para completar as funcionalidades do sistema financeiro.
       </p>
     </div>
   </Layout>
@@ -37,14 +38,66 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout><Index /></Layout>} />
-          <Route path="/finances" element={<Layout><Finances /></Layout>} />
-          <Route path="/cards" element={<Layout><Cards /></Layout>} />
-          <Route path="/cards/:id" element={<Layout><CardDetails /></Layout>} />
-          <Route path="/savings" element={<Layout><Savings /></Layout>} />
-          <Route path="/future-plans" element={<Layout><FuturePlans /></Layout>} />
-          <Route path="/categories" element={<Layout><Categories /></Layout>} />
-          <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
+          <Route
+            path="/"
+            element={
+              <Layout>
+                <Index />
+              </Layout>
+            }
+          />
+          <Route
+            path="/finances"
+            element={
+              <Layout>
+                <Finances />
+              </Layout>
+            }
+          />
+          <Route
+            path="/cards"
+            element={
+              <Layout>
+                <Cards />
+              </Layout>
+            }
+          />
+          <Route
+            path="/cards/:id"
+            element={
+              <Layout>
+                <CardDetails />
+              </Layout>
+            }
+          />
+          <Route
+            path="/savings"
+            element={
+              <Layout>
+                <Savings />
+              </Layout>
+            }
+          />
+          <Route
+            path="/future-plans"
+            element={
+              <Layout>
+                <FuturePlans />
+              </Layout>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <Layout>
+                <Categories />
+              </Layout>
+            }
+          />
+          <Route
+            path="/settings"
+            element={<PlaceholderPage title="Configurações" />}
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

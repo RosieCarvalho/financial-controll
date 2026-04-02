@@ -2,7 +2,13 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { listTransactions, createTransaction } from "./routes/transactions";
+import {
+  listTransactions,
+  createTransaction,
+  getTypesStatusTransaction,
+  deleteTransaction,
+  updateTransactions,
+} from "./routes/transactions";
 import {
   listCategorias,
   getCategoria,
@@ -16,7 +22,12 @@ import {
   createCaixa,
   listHistoricoCaixa,
 } from "./routes/caixas";
-import { listCartoes, getCartao, createCartao } from "./routes/cartoes";
+import {
+  listCartoes,
+  getCartao,
+  createCartao,
+  listarFaturaCartao,
+} from "./routes/cartoes";
 import {
   listComprasTerceiros,
   createCompraTerceiro,
@@ -43,6 +54,9 @@ export function createServer() {
   // Supabase-backed transactions endpoints (expect tables in Supabase with Portuguese names)
   app.get("/api/transactions", listTransactions);
   app.post("/api/transactions", createTransaction);
+  app.delete("/api/transactions", deleteTransaction);
+  app.get("/api/getTypesStatus", getTypesStatusTransaction);
+  app.put("/api/transactions", updateTransactions);
 
   // Categorias
   app.get("/api/categorias", listCategorias);
@@ -61,6 +75,7 @@ export function createServer() {
   app.get("/api/cartoes", listCartoes);
   app.get("/api/cartoes/:id", getCartao);
   app.post("/api/cartoes", createCartao);
+  app.get("/api/cartoes/:id/fatura", listarFaturaCartao);
 
   // Compras de terceiros
   app.get("/api/compras_terceiros", listComprasTerceiros);
