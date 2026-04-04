@@ -45,6 +45,9 @@ export const createCartao = (payload: any) => api.post("/api/cartoes", payload);
 export const createCompraTerceiro = (payload: any) =>
   api.post("/api/compras_terceiros", payload);
 
+export const receiveCompraTerceiro = (id: any) => {
+  return api.patch(`/api/compras_terceiros/${id}/receive`);
+};
 export const deleteTransaction = (id: string) =>
   api.delete(`/api/transactions/${id}`);
 

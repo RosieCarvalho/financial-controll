@@ -10,15 +10,18 @@ const isUuid = (v: any) =>
 
 export const listTransactions: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from("transacoes").select(
-      `
+    const { data, error } = await supabase
+      .from("transacoes")
+      .select(
+        `
         *,
         categorias (
           nome,
           tipo
         )
       `,
-    );
+      )
+      .is("compra_terceiros_id", null);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(
       (data ?? []).map((r: any) => ({

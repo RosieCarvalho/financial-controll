@@ -26,10 +26,10 @@ export function AddBuy({ card }: any) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newPurchase, setNewPurchase] = useState({
     description: "",
-    amount: 0,
+    amount: "",
     date: new Date().toISOString().split("T")[0],
     type: "one-time" as "one-time" | "installment",
-    installments: 1,
+    installments: "1",
   });
 
   const handleAddPurchase = () => {
@@ -40,7 +40,7 @@ export function AddBuy({ card }: any) {
 
     const item = {
       description: newPurchase.description,
-      valor: parseFloat(newPurchase.amount),
+      valor: parseFloat(newPurchase.amount || "0"),
       data: newPurchase.date,
       // category_id: "3", -- arrumar isso
       tipo: newPurchase.type,

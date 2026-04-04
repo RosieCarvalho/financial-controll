@@ -1,4 +1,3 @@
-/*************  ✨ Windsurf Command 🌟  *************/
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -69,9 +68,13 @@ export default function CardDetails() {
     enabled: !!id,
   });
   console.log("card", card);
-  const [purchases, setPurchases] = useState<Transaction[]>([]);
 
-  const totalInvoice = purchases.reduce((acc, p) => acc + p.amount, 0);
+  // Derivando valores diretamente da query para evitar estados dessincronizados
+  const totalInvoice = (account ?? []).reduce(
+    (acc, p) => acc + (p.valor || p.amount || 0),
+    0,
+  );
+
   const queryClient = useQueryClient();
   const updateTransactions = useMutation({
     mutationFn: updateTransaction,
@@ -109,11 +112,9 @@ export default function CardDetails() {
         parcela_atual: p.parcela_atual + 1,
       };
     });
-    console.log("newPurchases", newPurchases);
 
     const result = updateTransactions.mutate(newPurchases);
-    console.log("result", result);
-    // setPurchases(newPurchases);
+
     toast.success("Fatura paga! Itens liquidados removidos.");
   };
 
@@ -171,7 +172,7 @@ export default function CardDetails() {
               {new Intl.NumberFormat("pt-BR", {
                 style: "currency",
                 currency: "BRL",
-              }).format(card?.limite - totalInvoice)}
+              }).format((card?.limite || 0) - totalInvoice)}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -234,7 +235,7 @@ export default function CardDetails() {
                         variant="outline"
                         className="text-[10px] font-normal"
                       >
-                        {p.type === "one-time" ? "Compra Única" : "Parcelado"}
+                        {p.tipo === "one-time" ? "Compra Única" : "Parcelado"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">

@@ -31,6 +31,7 @@ import {
 import {
   listComprasTerceiros,
   createCompraTerceiro,
+  receiveCompraTerceiro,
 } from "./routes/compras_terceiros";
 import { listPlanosFuturos, createPlanoFuturo } from "./routes/planos_futuros";
 import { getDashboard } from "./routes/dashboard";
@@ -79,6 +80,7 @@ export function createServer() {
 
   // Compras de terceiros
   app.get("/api/compras_terceiros", listComprasTerceiros);
+  app.patch("/api/compras_terceiros/:id/receive", receiveCompraTerceiro);
   app.post("/api/compras_terceiros", createCompraTerceiro);
 
   // Planos futuros

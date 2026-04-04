@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "@/hooks/use-form";
 import {
   getCartoes,
   getPlanosFuturos,
@@ -11,6 +12,7 @@ import {
   createCartao,
   createCompraTerceiro,
   getComprasTerceiros,
+  receiveCompraTerceiro,
 } from "@/lib/api";
 import {
   CreditCard,
@@ -36,7 +38,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { AddCardOrThirdPartyDialog } from "./components/AddCardOrThirdPartyDialog";
+import { ThirdPartyList } from "./ThirdPartyList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AccountThirdParty as thirdPartyType,
+  Card as CardType,
+} from "@shared/api";
 import {
   Select,
   SelectContent,
@@ -62,60 +69,54 @@ const COLORS = [
 
 export default function CardsPage() {
   const [activeTab, setActiveTab] = useState("my-cards");
-  const { data: cardsData } = useQuery({
+  const { data: cardsData, isLoading: isLoadingCards } = useQuery<CardType[]>({
     queryKey: ["cartoes"],
     queryFn: getCartoes,
   });
-  const { data: thirdPartyData } = useQuery({
-    queryKey: ["compras_terceiros"],
-    queryFn: getComprasTerceiros,
-  });
-  const [cards, setCards] = useState(cardsData?.data ?? []);
-  const [thirdParty, setThirdParty] = useState(thirdPartyData?.data ?? []);
+
+  const { data: thirdPartyQueryData, isLoading: isLoadingThirdParty } =
+    useQuery<thirdPartyType[]>({
+      queryKey: ["compras_terceiros"],
+      queryFn: getComprasTerceiros,
+    });
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [addType, setAddType] = useState<"card" | "third-party">("card");
 
-  // Form states for New Card
-  const [cardName, setCardName] = useState("");
-  const [cardLimit, setCardLimit] = useState("");
-  const [cardDueDay, setCardDueDay] = useState("");
-  const [cardClosingDay, setCardClosingDay] = useState("");
-  const [cardColor, setCardColor] = useState("bg-purple-600");
-
-  // Form states for Third Party
-  const [tpPerson, setTpPerson] = useState("");
-  const [tpDesc, setTpDesc] = useState("");
-  const [tpAmount, setTpAmount] = useState("");
-  const [tpInstallments, setTpInstallments] = useState("");
-  const [tpCardId, setTpCardId] = useState("");
-
-  const resetForms = () => {
-    setCardName("");
-    setCardLimit("");
-    setCardDueDay("");
-    setCardClosingDay("");
-    setCardColor("bg-purple-600");
-    setTpPerson("");
-    setTpDesc("");
-    setTpAmount("");
-    setTpInstallments("");
-    setTpCardId("");
-  };
+  const {
+    values: form,
+    setFieldValue,
+    reset: resetForms,
+  } = useForm({
+    card: {
+      name: "",
+      limit: "",
+      dueDay: "",
+      closingDay: "",
+      color: "bg-purple-600",
+    },
+    thirdParty: {
+      person: "",
+      desc: "",
+      amount: "",
+      installments: "",
+      cardId: "",
+    },
+  });
 
   const handleAddCard = () => {
-    if (!cardName || !cardLimit || !cardDueDay || !cardClosingDay) {
+    const { name, limit, dueDay, closingDay, color } = form.card;
+    if (!name || !limit || !dueDay || !closingDay) {
       toast.error("Por favor, preencha todos os campos do cartão.");
       return;
     }
 
     const newCard = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: cardName,
-      limit: parseFloat(cardLimit),
-      used: 0,
-      dueDay: parseInt(cardDueDay),
-      closingDay: parseInt(cardClosingDay),
-      color: cardColor,
+      nome: name,
+      limite: parseFloat(limit),
+      dia_vencimento: parseInt(dueDay),
+      dia_fechamento: parseInt(closingDay),
+      cor: color,
     };
 
     // optimistic create via mutation
@@ -126,20 +127,20 @@ export default function CardsPage() {
   };
 
   const handleAddThirdParty = () => {
-    if (!tpPerson || !tpDesc || !tpAmount || !tpInstallments || !tpCardId) {
+    const { person, desc, amount, installments, cardId } = form.thirdParty;
+    if (!person || !desc || !amount || !installments || !cardId) {
       toast.error("Por favor, preencha todos os campos da compra.");
       return;
     }
 
     const newItem = {
-      id: Math.random().toString(36).substr(2, 9),
-      person: tpPerson,
-      desc: tpDesc,
-      amount: parseFloat(tpAmount),
-      installments: parseInt(tpInstallments),
-      paid: 0,
-      cardId: tpCardId,
-      date: new Date().toISOString().split("T")[0],
+      nome_pessoa: person,
+      descricao: desc,
+      valor: parseFloat(amount),
+      parcelas: parseInt(installments),
+      parcelas_pagas: 0,
+      cartao_id: cardId,
+      data: new Date().toISOString().split("T")[0],
     };
 
     addThirdPartyMutation.mutate(newItem);
@@ -148,59 +149,41 @@ export default function CardsPage() {
     resetForms();
   };
 
-  const handlePayInvoice = (id: string) => {
-    setCards((currentCards) =>
-      currentCards.map((card) => {
-        if (card.id === id) {
-          if (card.used > 0) {
-            toast.success(`Fatura do ${card.name} paga com sucesso!`);
-            return { ...card, used: 0 };
-          } else {
-            toast.info("Não há fatura pendente para este cartão.");
-          }
-        }
-        return card;
-      }),
-    );
-  };
-
   const handleReceivePayment = (id: string) => {
-    setThirdParty((items) =>
-      items.map((item) => {
-        if (item.id === id) {
-          if (item.paid < item.installments) {
-            toast.success(`Pagamento recebido de ${item.person}!`);
-            return { ...item, paid: item.paid + 1 };
-          } else {
-            toast.info("Todas as parcelas já foram pagas.");
-          }
-        }
-        return item;
-      }),
-    );
+    receivePaymentMutation.mutate(id);
   };
-
-  // sync state when queries load
-  useEffect(() => {
-    if (cardsData?.data) setCards(cardsData.data);
-  }, [cardsData]);
-
-  useEffect(() => {
-    if (thirdPartyData?.data) setThirdParty(thirdPartyData.data);
-  }, [thirdPartyData]);
 
   const queryClient = useQueryClient();
+
+  const receivePaymentMutation = useMutation({
+    mutationFn: receiveCompraTerceiro,
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ["transacoes"] });
+      const previous = queryClient.getQueryData(["transacoes"]);
+      return { previous };
+    },
+
+    onSuccess: () => {
+      // Invalidamos os dados para refletir o novo status e progresso na UI
+      queryClient.invalidateQueries({ queryKey: ["compras_terceiros"] });
+      queryClient.invalidateQueries({ queryKey: ["transacoes"] });
+      queryClient.invalidateQueries({ queryKey: ["cartoes"] });
+      toast.success("Pagamento recebido!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
   const addCardMutation = useMutation({
     mutationFn: createCartao,
     onMutate: async (newCard: any) => {
       await queryClient.cancelQueries({ queryKey: ["cartoes"] });
       const previous = queryClient.getQueryData(["cartoes"]);
-      setCards((c) => [...(c ?? []), newCard]);
+
       return { previous };
     },
     onError: (err, newCard, context: any) => {
-      setCards(context?.previous ?? []);
       toast.error("Erro ao criar cartão.");
     },
     onSettled: () => {
@@ -213,11 +196,10 @@ export default function CardsPage() {
     onMutate: async (newItem: any) => {
       await queryClient.cancelQueries({ queryKey: ["compras_terceiros"] });
       const previous = queryClient.getQueryData(["compras_terceiros"]);
-      setThirdParty((c) => [newItem, ...(c ?? [])]);
+
       return { previous };
     },
     onError: (err, newItem, context: any) => {
-      setThirdParty(context?.previous ?? []);
       toast.error("Erro ao registrar compra de terceiro.");
     },
     onSettled: () => {
@@ -249,30 +231,12 @@ export default function CardsPage() {
             onOpenChange={setIsDialogOpen}
             addType={addType}
             setAddType={setAddType}
-            cardName={cardName}
-            setCardName={setCardName}
-            cardLimit={cardLimit}
-            setCardLimit={setCardLimit}
-            cardDueDay={cardDueDay}
-            setCardDueDay={setCardDueDay}
-            cardClosingDay={cardClosingDay}
-            setCardClosingDay={setCardClosingDay}
-            cardColor={cardColor}
-            setCardColor={setCardColor}
-            tpPerson={tpPerson}
-            setTpPerson={setTpPerson}
-            tpDesc={tpDesc}
-            setTpDesc={setTpDesc}
-            tpAmount={tpAmount}
-            setTpAmount={setTpAmount}
-            tpInstallments={tpInstallments}
-            setTpInstallments={setTpInstallments}
-            tpCardId={tpCardId}
-            setTpCardId={setTpCardId}
+            form={form}
+            setFieldValue={setFieldValue}
             handleAddCard={handleAddCard}
             handleAddThirdParty={handleAddThirdParty}
             resetForms={resetForms}
-            cards={cards}
+            cards={cardsData ?? []}
           />
         </div>
       </div>
@@ -289,221 +253,159 @@ export default function CardsPage() {
 
         <TabsContent value="my-cards" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-            {cardsData?.map((card) => (
-              <Card
-                key={card.id}
-                className="border-none shadow-sm bg-card/50 backdrop-blur-md overflow-hidden group"
-              >
-                <div className={cn("h-2 w-full", card.color)} />
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={cn(
-                        "p-3 rounded-xl text-white shadow-md",
-                        card.cor,
-                      )}
-                    >
-                      <CreditCard className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">{card.name}</CardTitle>
-                      <CardDescription>
-                        Vencimento dia {card.dia_vencimento}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] h-5 bg-secondary/50"
+            {isLoadingCards
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[220px] rounded-xl border border-none bg-card/50 backdrop-blur-md animate-pulse overflow-hidden"
                   >
-                    Fecha dia {card.dia_fechamento}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="flex items-end justify-between mb-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">
-                        Fatura Atual
-                      </p>
-                      <h3 className="text-3xl font-bold">
-                        {new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        }).format(card.total_transacoes)}
-                      </h3>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">
-                        Limite Disponível
-                      </p>
-                      <p className="text-sm font-medium text-emerald-600">
-                        {new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        }).format(card.limite - card.total_transacoes)}
-                      </p>
+                    <div className="h-2 w-full bg-secondary" />
+                    <div className="p-6 space-y-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-xl bg-secondary" />
+                        <div className="space-y-2">
+                          <div className="h-5 w-32 bg-secondary rounded" />
+                          <div className="h-4 w-24 bg-secondary rounded" />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-end">
+                          <div className="space-y-2">
+                            <div className="h-3 w-16 bg-secondary rounded" />
+                            <div className="h-8 w-32 bg-secondary rounded" />
+                          </div>
+                          <div className="h-8 w-24 bg-secondary rounded" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-medium">
-                      <span>Uso do Limite</span>
-                      <span>
-                        {Math.round(
-                          (card.total_transacoes / card.limite) * 100,
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <Progress
-                      value={(card.total_transacoes / card.limite) * 100}
-                      className="h-2"
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter className="bg-secondary/20 border-t flex justify-between px-6 py-4">
-                  <Link to={`/cards/${card.id}`}>
-                    <Button variant="ghost" size="sm" className="gap-2">
-                      Ver Detalhes <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-emerald-600 border-emerald-200"
-                    onClick={() => handlePayInvoice(card.id)}
-                    disabled={card.used === 0}
+                ))
+              : cardsData?.map((card) => (
+                  <Card
+                    key={card.id}
+                    className="border-none shadow-sm bg-card/50 backdrop-blur-md overflow-hidden group"
                   >
-                    Pagar Fatura
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                    <div className={cn("h-2 w-full", card.cor)} />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={cn(
+                            "p-3 rounded-xl text-white shadow-md",
+                            card.cor,
+                          )}
+                        >
+                          <CreditCard className="h-6 w-6" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl">{card.nome}</CardTitle>
+                          <CardDescription>
+                            Vencimento dia {card.dia_vencimento}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] h-5 bg-secondary/50"
+                      >
+                        Fecha dia {card.dia_fechamento}
+                      </Badge>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="flex items-end justify-between mb-4">
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase font-semibold">
+                            Fatura Atual
+                          </p>
+                          <h3 className="text-3xl font-bold">
+                            {new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(card.total_transacoes)}
+                          </h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground uppercase font-semibold">
+                            Limite Disponível
+                          </p>
+                          <p className="text-sm font-medium text-emerald-600">
+                            {new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(card.limite - card.total_transacoes)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs font-medium">
+                          <span>Uso do Limite</span>
+                          <span>
+                            {card.limite > 0
+                              ? Math.round(
+                                  (card.total_transacoes / card.limite) * 100,
+                                )
+                              : 0}
+                            %
+                          </span>
+                        </div>
+                        <Progress
+                          value={
+                            card.limite > 0
+                              ? (card.total_transacoes / card.limite) * 100
+                              : 0
+                          }
+                          className="h-2"
+                        />
+                      </div>
+                    </CardContent>
+                    <CardFooter className="bg-secondary/20 border-t flex justify-between px-6 py-4">
+                      <Link to={`/cards/${card.id}`}>
+                        <Button variant="ghost" size="sm" className="gap-2">
+                          Ver Detalhes <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </CardFooter>
+                  </Card>
+                ))}
           </div>
         </TabsContent>
 
         <TabsContent value="third-party" className="space-y-6">
-          <Card className="border-none shadow-sm bg-card/50 backdrop-blur-md">
-            <CardHeader>
-              <CardTitle>Compras de Terceiros</CardTitle>
-              <CardDescription>
-                Rastreie compras que amigos ou familiares fizeram no seu cartão.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="grid grid-cols-1 divide-y">
-                  {thirdParty.map((tp) => {
-                    const card = cards.find((c) => c.id === tp.cardId);
-                    return (
-                      <div
-                        key={tp.id}
-                        className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-secondary/30 transition-colors duration-200"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-secondary rounded-lg text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                            <User className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold">{tp.person}</span>
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] py-0"
-                              >
-                                {card?.name || "Cartão não encontrado"}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {tp.desc}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-1">
-                          <p className="font-bold text-lg">
-                            {new Intl.NumberFormat("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            }).format(tp.amount)}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <Layers className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              Parcela {tp.paid} de {tp.installments}
-                            </span>
-                            <Progress
-                              value={
-                                tp.installments > 0
-                                  ? (tp.paid / tp.installments) * 100
-                                  : 0
-                              }
-                              className="h-1.5 w-16"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 self-end md:self-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => handleReceivePayment(tp.id)}
-                            disabled={tp.paid >= tp.installments}
-                          >
-                            {tp.paid >= tp.installments ? "Pago" : "Receber"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-emerald-100 bg-emerald-50/30">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-emerald-600" />
-                  Dica Financeira
-                </CardTitle>
+          {isLoadingThirdParty ? (
+            <Card className="border-none shadow-sm bg-card/50 backdrop-blur-md">
+              <CardHeader className="space-y-2">
+                <div className="h-6 w-48 bg-secondary rounded animate-pulse" />
+                <div className="h-4 w-72 bg-secondary rounded animate-pulse" />
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-emerald-800 leading-relaxed">
-                  Ao emprestar seu cartão para terceiros, certifique-se de
-                  registrar cada parcela. Assim, você não esquece de cobrar e
-                  seu fluxo de caixa fica correto!
-                </p>
+                <div className="rounded-xl border bg-card overflow-hidden divide-y divide-secondary/20">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-pulse"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-secondary" />
+                        <div className="space-y-2">
+                          <div className="h-4 w-24 bg-secondary rounded" />
+                          <div className="h-3 w-32 bg-secondary rounded" />
+                        </div>
+                      </div>
+                      <div className="flex flex-row md:flex-col items-center md:items-end justify-between gap-2">
+                        <div className="h-6 w-20 bg-secondary rounded" />
+                        <div className="h-3 w-16 bg-secondary rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-            <Card className="border-blue-100 bg-blue-50/30">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                  Próximos Acertos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {thirdParty.slice(0, 3).map((tp) => (
-                  <div key={tp.id} className="flex justify-between text-sm">
-                    <span className="text-blue-800">{tp.person}</span>
-                    <span className="font-bold">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(tp.amount / tp.installments)}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+          ) : (
+            <ThirdPartyList
+              thirdParty={thirdPartyQueryData ?? []}
+              cards={cardsData ?? []}
+              handleReceivePayment={handleReceivePayment}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>

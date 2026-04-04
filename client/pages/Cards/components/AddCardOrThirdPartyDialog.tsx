@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+import { Card as CardType } from "@shared/api";
 
 const COLORS = [
   { name: "Roxo", value: "bg-purple-600" },
@@ -37,32 +38,28 @@ interface AddCardOrThirdPartyDialogProps {
   onOpenChange: (open: boolean) => void;
   addType: "card" | "third-party";
   setAddType: (type: "card" | "third-party") => void;
-  // Form states
-  cardName: string;
-  setCardName: (name: string) => void;
-  cardLimit: string;
-  setCardLimit: (limit: string) => void;
-  cardDueDay: string;
-  setCardDueDay: (day: string) => void;
-  cardClosingDay: string;
-  setCardClosingDay: (day: string) => void;
-  cardColor: string;
-  setCardColor: (color: string) => void;
-  tpPerson: string;
-  setTpPerson: (person: string) => void;
-  tpDesc: string;
-  setTpDesc: (desc: string) => void;
-  tpAmount: string;
-  setTpAmount: (amount: string) => void;
-  tpInstallments: string;
-  setTpInstallments: (installments: string) => void;
-  tpCardId: string;
-  setTpCardId: (id: string) => void;
+  form: {
+    card: {
+      name: string;
+      limit: string;
+      dueDay: string;
+      closingDay: string;
+      color: string;
+    };
+    thirdParty: {
+      person: string;
+      desc: string;
+      amount: string;
+      installments: string;
+      cardId: string;
+    };
+  };
+  setFieldValue: (path: string, value: any) => void;
   // Handlers
   handleAddCard: () => void;
   handleAddThirdParty: () => void;
   resetForms: () => void;
-  cards: any[];
+  cards: CardType[];
 }
 
 export function AddCardOrThirdPartyDialog({
@@ -70,26 +67,8 @@ export function AddCardOrThirdPartyDialog({
   onOpenChange,
   addType,
   setAddType,
-  cardName,
-  setCardName,
-  cardLimit,
-  setCardLimit,
-  cardDueDay,
-  setCardDueDay,
-  cardClosingDay,
-  setCardClosingDay,
-  cardColor,
-  setCardColor,
-  tpPerson,
-  setTpPerson,
-  tpDesc,
-  setTpDesc,
-  tpAmount,
-  setTpAmount,
-  tpInstallments,
-  setTpInstallments,
-  tpCardId,
-  setTpCardId,
+  form,
+  setFieldValue,
   handleAddCard,
   handleAddThirdParty,
   resetForms,
@@ -130,8 +109,8 @@ export function AddCardOrThirdPartyDialog({
                 <Label htmlFor="card-name">Nome do Cartão</Label>
                 <Input
                   id="card-name"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
+                  value={form.card.name}
+                  onChange={(e) => setFieldValue("card.name", e.target.value)}
                   placeholder="Ex: Nubank, Inter, Visa..."
                 />
               </div>
@@ -141,14 +120,19 @@ export function AddCardOrThirdPartyDialog({
                   <Input
                     id="card-limit"
                     type="number"
-                    value={cardLimit}
-                    onChange={(e) => setCardLimit(e.target.value)}
+                    value={form.card.limit}
+                    onChange={(e) =>
+                      setFieldValue("card.limit", e.target.value)
+                    }
                     placeholder="0.00"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label>Cor</Label>
-                  <Select value={cardColor} onValueChange={setCardColor}>
+                  <Select
+                    value={form.card.color}
+                    onValueChange={(v) => setFieldValue("card.color", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -175,8 +159,10 @@ export function AddCardOrThirdPartyDialog({
                     type="number"
                     min="1"
                     max="31"
-                    value={cardDueDay}
-                    onChange={(e) => setCardDueDay(e.target.value)}
+                    value={form.card.dueDay}
+                    onChange={(e) =>
+                      setFieldValue("card.dueDay", e.target.value)
+                    }
                     placeholder="Ex: 10"
                   />
                 </div>
@@ -187,8 +173,10 @@ export function AddCardOrThirdPartyDialog({
                     type="number"
                     min="1"
                     max="31"
-                    value={cardClosingDay}
-                    onChange={(e) => setCardClosingDay(e.target.value)}
+                    value={form.card.closingDay}
+                    onChange={(e) =>
+                      setFieldValue("card.closingDay", e.target.value)
+                    }
                     placeholder="Ex: 03"
                   />
                 </div>
@@ -200,8 +188,10 @@ export function AddCardOrThirdPartyDialog({
                 <Label htmlFor="tp-person">Nome da Pessoa</Label>
                 <Input
                   id="tp-person"
-                  value={tpPerson}
-                  onChange={(e) => setTpPerson(e.target.value)}
+                  value={form.thirdParty.person}
+                  onChange={(e) =>
+                    setFieldValue("thirdParty.person", e.target.value)
+                  }
                   placeholder="Quem comprou?"
                 />
               </div>
@@ -209,8 +199,10 @@ export function AddCardOrThirdPartyDialog({
                 <Label htmlFor="tp-desc">Descrição do Item</Label>
                 <Input
                   id="tp-desc"
-                  value={tpDesc}
-                  onChange={(e) => setTpDesc(e.target.value)}
+                  value={form.thirdParty.desc}
+                  onChange={(e) =>
+                    setFieldValue("thirdParty.desc", e.target.value)
+                  }
                   placeholder="O que foi comprado?"
                 />
               </div>
@@ -220,8 +212,10 @@ export function AddCardOrThirdPartyDialog({
                   <Input
                     id="tp-amount"
                     type="number"
-                    value={tpAmount}
-                    onChange={(e) => setTpAmount(e.target.value)}
+                    value={form.thirdParty.amount}
+                    onChange={(e) =>
+                      setFieldValue("thirdParty.amount", e.target.value)
+                    }
                     placeholder="0.00"
                   />
                 </div>
@@ -230,22 +224,27 @@ export function AddCardOrThirdPartyDialog({
                   <Input
                     id="tp-installments"
                     type="number"
-                    value={tpInstallments}
-                    onChange={(e) => setTpInstallments(e.target.value)}
+                    value={form.thirdParty.installments}
+                    onChange={(e) =>
+                      setFieldValue("thirdParty.installments", e.target.value)
+                    }
                     placeholder="Ex: 10"
                   />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label>Cartão Utilizado</Label>
-                <Select value={tpCardId} onValueChange={setTpCardId}>
+                <Select
+                  value={form.thirdParty.cardId}
+                  onValueChange={(v) => setFieldValue("thirdParty.cardId", v)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um cartão" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cards.map((c) => (
+                    {cards?.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name}
+                        {c.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>

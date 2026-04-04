@@ -57,6 +57,19 @@ export interface AccountCard {
   updated_at?: string;
   valor?: number;
 }
+
+export interface AccountThirdParty {
+  cartao_id: string;
+  created_at: string;
+  data: string;
+  descricao: string;
+  id: string;
+  nome_pessoa: string;
+  parcelas: number;
+  parcelas_pagas: number | null;
+  updated_at: string;
+  valor: number;
+}
 export interface Card {
   cor: string;
   created_at: string;

@@ -69,9 +69,9 @@ export function DeleteTransactionModal({
           <Button
             variant="destructive"
             onClick={() => deleteTransactionMutation.mutate()}
-            disabled={deleteTransactionMutation.isLoading}
+            disabled={deleteTransactionMutation.isPending}
           >
-            {deleteTransactionMutation.isLoading ? "Excluindo..." : "Excluir"}
+            {deleteTransactionMutation.isPending ? "Excluindo..." : "Excluir"}
           </Button>
         </div>
       </DialogContent>
