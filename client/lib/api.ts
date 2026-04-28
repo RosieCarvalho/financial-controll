@@ -1,3 +1,4 @@
+import { TransactionBD } from "@shared/api";
 import axios from "axios";
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || "/";
@@ -36,18 +37,25 @@ export const getComprasTerceiros = () => api.get("/api/compras_terceiros");
 export const createTransaction = (payload: any) =>
   api.post("/api/transactions", payload);
 
-export const updateTransaction = (payload: any) =>
+export const updateTransaction = (payload: TransactionBD) =>
   api.put(`/api/transactions`, payload);
 export const createCategoria = (payload: any) =>
   api.post("/api/categorias", payload);
 
 export const createCartao = (payload: any) => api.post("/api/cartoes", payload);
+export const updateCartao = (id: string, payload: any) =>
+  api.put(`/api/cartoes/${id}`, payload);
+export const deleteCartao = (id: string) => api.delete(`/api/cartoes/${id}`);
 export const createCompraTerceiro = (payload: any) =>
   api.post("/api/compras_terceiros", payload);
 
 export const receiveCompraTerceiro = (id: any) => {
   return api.patch(`/api/compras_terceiros/${id}/receive`);
 };
+export const updateCompraTerceiro = (id: string, payload: any) =>
+  api.put(`/api/compras_terceiros/${id}`, payload);
+export const deleteCompraTerceiro = (id: string) =>
+  api.delete(`/api/compras_terceiros/${id}`);
 export const deleteTransaction = (id: string) =>
   api.delete(`/api/transactions/${id}`);
 

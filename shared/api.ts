@@ -27,6 +27,21 @@ export interface Transaction {
   currentInstallment?: number;
 }
 
+export interface TransactionBD {
+  id: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  categoria_id: string;
+  tipo: "fixed" | "one-time" | "installment";
+  status: "pending" | "paid" | "received";
+  caixa_id?: string; // If coming from a specific box
+  cartao_id?: string; // If paid via card
+  compra_terceiros_id?: string; // If it's a third party purchase
+  parcelas_total?: number;
+  parcela_atual?: number;
+}
+
 export interface CashBox {
   id: string;
   name: string;

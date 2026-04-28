@@ -109,14 +109,56 @@ export const receiveCompraTerceiro: RequestHandler = async (req, res) => {
     if (transacaoError) {
       // Opcional: Reverter o update da compra se a transação falhar
       console.error("Erro ao sincronizar transação:", transacaoError);
-      return res
-        .status(500)
-        .json({
-          error: "Compra atualizada, mas falha ao sincronizar transação.",
-        });
+      return res.status(500).json({
+        error: "Compra atualizada, mas falha ao sincronizar transação.",
+      });
     }
 
     return res.json(updatedTp);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const updateCompraTerceiro: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  const payload = req.body as any;
+  if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const dbPayload: any = {
+      nome_pessoa: payload.personName ?? payload.nome_pessoa ?? payload.person,
+      descricao: payload.description ?? payload.descricao ?? payload.desc,
+      valor: payload.amount ?? payload.valor,
+      data: payload.date ?? payload.data,
+      cartao_id: payload.cardId ?? payload.cartao_id,
+      parcelas: payload.installments ?? payload.parcelas,
+      parcelas_pagas: payload.paidInstallments ?? payload.parcelas_pagas,
+    };
+
+    const { data, error } = await supabase
+      .from("compras_terceiros")
+      .update(dbPayload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const deleteCompraTerceiro: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const { error } = await supabase
+      .from("compras_terceiros")
+      .delete()
+      .eq("id", id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(204).send();
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }

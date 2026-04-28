@@ -4,7 +4,9 @@ import {
   MoreVertical,
   AlertCircle,
   Calendar,
+  Search,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -13,6 +15,16 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import EditThirdPartyDialog from "./components/EditThirdPartyDialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteCompraTerceiro } from "@/lib/api";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { AccountThirdParty, Card as CardType } from "@shared/api";
@@ -28,6 +40,28 @@ export function ThirdPartyList({
   cards,
   handleReceivePayment,
 }: ThirdPartyListProps) {
+  const [query, setQuery] = useState("");
+  const queryClient = useQueryClient();
+
+  const filteredThirdParty = useMemo(() => {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) return thirdParty ?? [];
+    return (thirdParty ?? []).filter((tp) => {
+      const nome = (tp.nome_pessoa || "").toLowerCase();
+      const desc = (tp.descricao || "").toLowerCase();
+      return (
+        nome.includes(q) || desc.includes(q) || `${nome} ${desc}`.includes(q)
+      );
+    });
+  }, [thirdParty, query]);
+
+  const totalThirdParty = useMemo(() => {
+    return (filteredThirdParty ?? []).reduce(
+      (acc, tp) => acc + (tp.valor || 0),
+      0,
+    );
+  }, [filteredThirdParty]);
+
   return (
     <div className="space-y-6">
       <Card className="border-none shadow-sm bg-card/50 backdrop-blur-md">
@@ -38,9 +72,21 @@ export function ThirdPartyList({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar por nome ou descrição"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          </div>
+
           <div className="rounded-xl border bg-card overflow-hidden">
             <div className="grid grid-cols-1 divide-y">
-              {thirdParty?.map((tp) => {
+              {filteredThirdParty?.map((tp) => {
                 const card = cards?.find((c) => c.id === tp.cartao_id);
                 return (
                   <div
@@ -98,13 +144,64 @@ export function ThirdPartyList({
                       >
                         {tp.parcelas_pagas >= tp.parcelas ? "Pago" : "Receber"}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem>
+                            <EditThirdPartyDialog
+                              item={tp}
+                              trigger={<span>Editar</span>}
+                            />
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              if (
+                                confirm(
+                                  "Confirma exclusão desta compra de terceiro?",
+                                )
+                              ) {
+                                fetch(`/api/compras_terceiros/${tp.id}`, {
+                                  method: "DELETE",
+                                }).then((r) => {
+                                  if (r.ok) {
+                                    queryClient.invalidateQueries({
+                                      queryKey: ["compras_terceiros"],
+                                    });
+                                    alert("Excluído");
+                                  } else {
+                                    alert("Erro ao excluir");
+                                  }
+                                });
+                              }
+                            }}
+                          >
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 );
               })}
+            </div>
+          </div>
+          <div className="p-4 flex justify-end items-center">
+            <div className="text-sm text-muted-foreground mr-4">
+              Total (exibido):
+            </div>
+            <div className="text-lg font-bold">
+              {new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              }).format(totalThirdParty)}
             </div>
           </div>
         </CardContent>

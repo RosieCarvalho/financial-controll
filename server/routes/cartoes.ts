@@ -84,3 +84,44 @@ export const listarFaturaCartao: RequestHandler = async (req, res) => {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }
 };
+
+export const updateCartao: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  const payload = req.body as any;
+  if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const dbPayload: any = {
+      nome: payload.name ?? payload.nome,
+      limite: payload.limit ?? payload.limite,
+      dia_fechamento: payload.closingDay ?? payload.dia_fechamento,
+      dia_vencimento: payload.dueDay ?? payload.dia_vencimento,
+      cor: payload.color ?? payload.cor,
+    };
+
+    const { data, error } = await supabase
+      .from("cartoes_credito")
+      .update(dbPayload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json(data);
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};
+
+export const deleteCartao: RequestHandler = async (req, res) => {
+  const { id } = req.params;
+  if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
+  try {
+    const { error } = await supabase
+      .from("cartoes_credito")
+      .delete()
+      .eq("id", id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(204).send();
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? String(err) });
+  }
+};

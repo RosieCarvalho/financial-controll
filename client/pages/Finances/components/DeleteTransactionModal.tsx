@@ -21,14 +21,26 @@ interface DeleteTransactionModalProps {
 export function DeleteTransactionModal({
   transactionId,
   onSuccess,
-}: DeleteTransactionModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  console.log("transactionId", transactionId);
+  open: openProp,
+  onOpenChange,
+}: DeleteTransactionModalProps & {
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}) {
+  const isControlled = typeof openProp !== "undefined";
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = isControlled ? openProp! : openInternal;
+  const setOpen = (v: boolean) => {
+    if (isControlled) onOpenChange && onOpenChange(v);
+    else setOpenInternal(v);
+  };
+
   const deleteTransactionMutation = useMutation({
-    mutationFn: () => deleteTransaction(transactionId),
+    mutationFn: () => deleteTransaction(transactionId!),
     onSuccess: () => {
       toast.success("Transação excluída com sucesso!");
       onSuccess();
+      setOpen(false);
     },
     onError: (err) => {
       console.log(err);
@@ -37,33 +49,34 @@ export function DeleteTransactionModal({
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="destructive" size="icon" className="h-8 w-8">
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
-              fill="currentColor"
-            />
-          </svg>
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={setOpen}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="destructive" size="icon" className="h-8 w-8">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"
+                fill="currentColor"
+              />
+            </svg>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="w-96">
         <DialogHeader>
           <DialogTitle>Excluir Transação</DialogTitle>
-          <DialogClose />
         </DialogHeader>
         <DialogDescription className="mb-4">
           Tem certeza que deseja excluir esta transação? Esta ação não pode ser
           desfeita.
         </DialogDescription>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
           <Button

@@ -34,6 +34,14 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import EditCardDialog from "./components/EditCardDialog";
+import { DeleteCardModal } from "./components/DeleteCardModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -69,6 +77,10 @@ const COLORS = [
 
 export default function CardsPage() {
   const [activeTab, setActiveTab] = useState("my-cards");
+  const [editingCard, setEditingCard] = useState<CardType | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleteCardId, setDeleteCardId] = useState<string | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const { data: cardsData, isLoading: isLoadingCards } = useQuery<CardType[]>({
     queryKey: ["cartoes"],
     queryFn: getCartoes,
@@ -303,12 +315,44 @@ export default function CardsPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] h-5 bg-secondary/50"
-                      >
-                        Fecha dia {card.dia_fechamento}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] h-5 bg-secondary/50"
+                        >
+                          Fecha dia {card.dia_fechamento}
+                        </Badge>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-100"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setEditingCard(card);
+                                setIsEditOpen(true);
+                              }}
+                            >
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setDeleteCardId(card.id!);
+                                setIsDeleteOpen(true);
+                              }}
+                            >
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </CardHeader>
                     <CardContent className="pt-4">
                       <div className="flex items-end justify-between mb-4">
@@ -408,6 +452,25 @@ export default function CardsPage() {
           )}
         </TabsContent>
       </Tabs>
+      {/** Controlled dialogs rendered outside cards to avoid menu unmount issues */}
+      <EditCardDialog
+        card={editingCard}
+        open={isEditOpen}
+        onOpenChange={(v: boolean) => {
+          setIsEditOpen(v);
+          if (!v) setEditingCard(null);
+        }}
+      />
+      {deleteCardId && (
+        <DeleteCardModal
+          cardId={deleteCardId}
+          open={isDeleteOpen}
+          onOpenChange={(v: boolean) => {
+            setIsDeleteOpen(v);
+            if (!v) setDeleteCardId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

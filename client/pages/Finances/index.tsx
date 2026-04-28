@@ -47,6 +47,13 @@ import {
 import { toast } from "sonner";
 import { NewTransactionDialog } from "./components/NewTransactionDialog";
 import { DeleteTransactionModal } from "./components/DeleteTransactionModal";
+import EditTransactionDialog from "./components/EditTransactionDialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { ta, tr } from "date-fns/locale";
 
 const MONTHS = [
@@ -75,13 +82,14 @@ export default function Finances() {
     queryKey: ["transacoes"],
     queryFn: getTransacoes,
   });
-  const transactionsDataValue = transactionsData?.data ?? [];
+  const transactionsDataValue =
+    transactionsData?.data ?? transactionsData ?? [];
 
   const { data: categoriesData } = useQuery({
     queryKey: ["categorias"],
     queryFn: getCategorias,
   });
-  const categoriesDataValue = categoriesData?.data ?? [];
+  const categoriesDataValue = categoriesData?.data ?? categoriesData ?? [];
   const categoriesDataFinal = categoriesDataValue as Category[];
 
   const [transactions, setTransactions] = useState<Transaction[]>(
@@ -93,6 +101,19 @@ export default function Finances() {
   };
 
   const queryClient = useQueryClient();
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => {
+      return fetch(`/api/transactions/${id}`, { method: "DELETE" }).then(
+        (r) => {
+          if (!r.ok) throw new Error("Erro ao excluir");
+          return r;
+        },
+      );
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["transacoes"] }),
+    onError: () => toast.error("Erro ao excluir transação"),
+  });
   const addTransaction = useMutation({
     mutationFn: createTransaction,
     onMutate: async (newTx: any) => {
@@ -110,9 +131,18 @@ export default function Finances() {
     },
   });
 
+  const [editingTransaction, setEditingTransaction] = useState<any | null>(
+    null,
+  );
+  const [deletingTransaction, setDeletingTransaction] = useState<any | null>(
+    null,
+  );
+
   useEffect(() => {
     if (transactionsData)
-      setTransactions(transactionsData as unknown as Transaction[]);
+      setTransactions(
+        (transactionsData as any)?.data ?? (transactionsData as any) ?? [],
+      );
   }, [transactionsData]);
 
   const getCategory = (id: string) => {
@@ -146,6 +176,9 @@ export default function Finances() {
     });
   }, [transactions, searchTerm, activeTab, selectedMonth]);
   console.log(transactions);
+  const filteredTotal = useMemo(() => {
+    return filteredTransactions.reduce((acc, t) => acc + (t.amount || 0), 0);
+  }, [filteredTransactions]);
   const stats = useMemo(() => {
     const income = transactions
       .filter((t) => {
@@ -166,7 +199,7 @@ export default function Finances() {
       expenses,
       balance: income - expenses,
     };
-  }, [filteredTransactions]);
+  }, [transactions, categoriesDataValue]);
 
   const handleAddTransaction = (tx: {
     description: string;
@@ -377,10 +410,29 @@ export default function Finances() {
                           }).format(t.amount)}
                         </TableCell>
                         <TableCell>
-                          <DeleteTransactionModal
-                            transactionId={t.id}
-                            onSuccess={() => deleteTransaction(t.id)}
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem
+                                onSelect={() => setEditingTransaction(t)}
+                              >
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => setDeletingTransaction(t)}
+                              >
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -393,6 +445,36 @@ export default function Finances() {
                 </div>
               )}
             </div>
+            <div className="p-4 flex justify-end items-center">
+              <div className="text-sm text-muted-foreground mr-4">
+                Total (exibido):
+              </div>
+              <div className="text-lg font-bold">
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(filteredTotal)}
+              </div>
+            </div>
+            {editingTransaction && (
+              <EditTransactionDialog
+                transaction={editingTransaction}
+                categories={categoriesDataFinal}
+                open={Boolean(editingTransaction)}
+                onOpenChange={(v) => !v && setEditingTransaction(null)}
+              />
+            )}
+            {deletingTransaction && (
+              <DeleteTransactionModal
+                transactionId={deletingTransaction.id}
+                onSuccess={() => {
+                  deleteTransaction(deletingTransaction.id);
+                  setDeletingTransaction(null);
+                }}
+                open={Boolean(deletingTransaction)}
+                onOpenChange={(v) => !v && setDeletingTransaction(null)}
+              />
+            )}
           </Tabs>
         </CardContent>
       </Card>

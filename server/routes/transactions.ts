@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import { supabase } from "../supabase";
-import type { Transaction } from "@shared/api";
+import type { Transaction, TransactionBD } from "@shared/api";
 
 const isUuid = (v: any) =>
   typeof v === "string" &&
@@ -111,7 +111,7 @@ export const deleteTransaction: RequestHandler = async (req, res) => {
 };
 
 export const updateTransactions: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<Transaction>;
+  const payload = req.body as Partial<TransactionBD>;
   try {
     const { error } = await supabase
       .from("transacoes")

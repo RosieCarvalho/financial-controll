@@ -27,11 +27,15 @@ import {
   getCartao,
   createCartao,
   listarFaturaCartao,
+  updateCartao,
+  deleteCartao,
 } from "./routes/cartoes";
 import {
   listComprasTerceiros,
   createCompraTerceiro,
   receiveCompraTerceiro,
+  updateCompraTerceiro,
+  deleteCompraTerceiro,
 } from "./routes/compras_terceiros";
 import { listPlanosFuturos, createPlanoFuturo } from "./routes/planos_futuros";
 import { getDashboard } from "./routes/dashboard";
@@ -55,7 +59,7 @@ export function createServer() {
   // Supabase-backed transactions endpoints (expect tables in Supabase with Portuguese names)
   app.get("/api/transactions", listTransactions);
   app.post("/api/transactions", createTransaction);
-  app.delete("/api/transactions", deleteTransaction);
+  app.delete("/api/transactions/:id", deleteTransaction);
   app.get("/api/getTypesStatus", getTypesStatusTransaction);
   app.put("/api/transactions", updateTransactions);
 
@@ -76,12 +80,16 @@ export function createServer() {
   app.get("/api/cartoes", listCartoes);
   app.get("/api/cartoes/:id", getCartao);
   app.post("/api/cartoes", createCartao);
+  app.put("/api/cartoes/:id", updateCartao);
+  app.delete("/api/cartoes/:id", deleteCartao);
   app.get("/api/cartoes/:id/fatura", listarFaturaCartao);
 
   // Compras de terceiros
   app.get("/api/compras_terceiros", listComprasTerceiros);
   app.patch("/api/compras_terceiros/:id/receive", receiveCompraTerceiro);
   app.post("/api/compras_terceiros", createCompraTerceiro);
+  app.put("/api/compras_terceiros/:id", updateCompraTerceiro);
+  app.delete("/api/compras_terceiros/:id", deleteCompraTerceiro);
 
   // Planos futuros
   app.get("/api/planos_futuros", listPlanosFuturos);
