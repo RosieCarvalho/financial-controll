@@ -34,7 +34,7 @@ export function CashBoxHistoryDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
-            Movimentações: {selectedBox?.name}
+            Movimentações: {selectedBox?.nome}
           </DialogTitle>
           <DialogDescription>
             Histórico detalhado de depósitos e resgates.
@@ -42,7 +42,7 @@ export function CashBoxHistoryDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">
-          {selectedBox?.history.map((item) => (
+          {(selectedBox?.history ?? []).map((item) => (
             <div
               key={item.id}
               className="flex items-center justify-between p-4 rounded-xl bg-secondary/30 hover:bg-secondary transition-colors"
@@ -51,36 +51,36 @@ export function CashBoxHistoryDialog({
                 <div
                   className={cn(
                     "p-2 rounded-full",
-                    item.type === "deposit"
+                    item.tipo === "deposit"
                       ? "bg-emerald-100 text-emerald-600"
                       : "bg-rose-100 text-rose-600",
                   )}
                 >
-                  {item.type === "deposit" ? (
+                  {item.tipo === "deposit" ? (
                     <ArrowUpRight className="h-4 w-4" />
                   ) : (
                     <ArrowDownRight className="h-4 w-4" />
                   )}
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">{item.description}</p>
-                  <p className="text-xs text-muted-foreground">{item.date}</p>
+                  <p className="font-semibold text-sm">{item.descricao}</p>
+                  <p className="text-xs text-muted-foreground">{item.data}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p
                   className={cn(
                     "font-bold",
-                    item.type === "deposit"
+                    item.tipo === "deposit"
                       ? "text-emerald-600"
                       : "text-rose-600",
                   )}
                 >
-                  {item.type === "deposit" ? "+" : ""}
+                  {item.tipo === "deposit" ? "+" : ""}
                   {new Intl.NumberFormat("pt-BR", {
                     style: "currency",
                     currency: "BRL",
-                  }).format(item.amount)}
+                  }).format(item.valor)}
                 </p>
                 <Badge
                   variant="outline"
@@ -91,7 +91,7 @@ export function CashBoxHistoryDialog({
               </div>
             </div>
           ))}
-          {(!selectedBox || selectedBox.history.length === 0) && (
+          {(selectedBox?.history?.length ?? 0) === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               Nenhuma movimentação registrada.
             </div>

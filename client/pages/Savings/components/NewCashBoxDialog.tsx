@@ -13,30 +13,26 @@ import {
 } from "@/components/ui/dialog";
 
 interface NewCashBoxDialogProps {
-  onSubmit: (box: {
-    name: string;
-    description: string;
-    balance: number;
-  }) => void;
+  onSubmit: (box: { nome: string; descricao: string; saldo: number }) => void;
 }
 
 export function NewCashBoxDialog({ onSubmit }: NewCashBoxDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [balance, setBalance] = useState("");
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [saldo, setSaldo] = useState("");
 
   const resetForm = () => {
-    setName("");
-    setDescription("");
-    setBalance("");
+    setNome("");
+    setDescricao("");
+    setSaldo("");
   };
 
   const handleSubmit = () => {
     onSubmit({
-      name: name || "Nova Caixinha",
-      description,
-      balance: parseFloat(balance || "0"),
+      nome: nome || "Nova Caixinha",
+      descricao,
+      saldo: parseFloat(saldo || "0"),
     });
     setIsOpen(false);
     resetForm();
@@ -62,16 +58,16 @@ export function NewCashBoxDialog({ onSubmit }: NewCashBoxDialogProps) {
             <label className="text-sm font-medium">Nome da Caixinha</label>
             <Input
               placeholder="Ex: Reforma da Casa, Troca de Carro"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
             <label className="text-sm font-medium">Descrição</label>
             <Input
               placeholder="Para que serve esse dinheiro?"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
             />
           </div>
           <div className="grid gap-2">
@@ -81,8 +77,8 @@ export function NewCashBoxDialog({ onSubmit }: NewCashBoxDialogProps) {
             <Input
               type="number"
               placeholder="0.00"
-              value={balance}
-              onChange={(e) => setBalance(e.target.value)}
+              value={saldo}
+              onChange={(e) => setSaldo(e.target.value)}
             />
           </div>
         </div>

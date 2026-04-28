@@ -2,7 +2,7 @@
  * Shared types for the Financial Control System
  */
 
-export type FinancialRule = "50" | "30" | "20";
+export type FinancialRule = "50" | "30" | "10p" | "10a";
 
 export interface Category {
   id: string;
@@ -44,15 +44,15 @@ export interface TransactionBD {
 
 export interface CashBox {
   id: string;
-  name: string;
-  balance: number;
-  description: string;
-  history: {
+  nome: string;
+  saldo: number;
+  descricao?: string;
+  history?: {
     id: string;
-    amount: number;
-    date: string;
-    type: "deposit" | "withdrawal";
-    description: string;
+    valor: number;
+    data: string;
+    tipo: "deposit" | "withdrawal";
+    descricao?: string;
   }[];
 }
 
@@ -125,7 +125,8 @@ export interface DashboardData {
   ruleStats: {
     rule50: { current: number; limit: number };
     rule30: { current: number; limit: number };
-    rule20: { current: number; limit: number };
+    rule10Pendencias: { current: number; limit: number };
+    rule10Ajuda: { current: number; limit: number };
   };
   upcomingCardDues: {
     cardName: string;

@@ -62,7 +62,7 @@ export function NewCategoryDialog({ onSubmit }: NewCategoryDialogProps) {
     await onSubmit({
       name: newName,
       type: newType,
-      rule: newRule as "50" | "30" | "20",
+      rule: newRule as "50" | "30" | "10p" | "10a",
       color: newColor,
     });
 
@@ -108,7 +108,7 @@ export function NewCategoryDialog({ onSubmit }: NewCategoryDialogProps) {
               </Select>
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Regra (50/30/20)</label>
+              <label className="text-sm font-medium">Regra (50/30/10/10)</label>
               <Select
                 value={newRule}
                 onValueChange={setNewRule}
@@ -120,7 +120,8 @@ export function NewCategoryDialog({ onSubmit }: NewCategoryDialogProps) {
                 <SelectContent>
                   <SelectItem value="50">Essenciais (50%)</SelectItem>
                   <SelectItem value="30">Desejos (30%)</SelectItem>
-                  <SelectItem value="20">Reserva (20%)</SelectItem>
+                  <SelectItem value="10p">Pendências (10%)</SelectItem>
+                  <SelectItem value="10a">Ajuda ao próximo (10%)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

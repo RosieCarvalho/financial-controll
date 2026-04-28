@@ -36,7 +36,7 @@ export function CashBoxTransactionDialog({
 
     const numAmount = parseFloat(amount);
 
-    if (txType === "withdrawal" && selectedBox.balance < numAmount) {
+    if (txType === "withdrawal" && selectedBox.saldo < numAmount) {
       toast.error("Saldo insuficiente na caixinha!");
       return;
     }
@@ -54,11 +54,11 @@ export function CashBoxTransactionDialog({
             {txType === "deposit" ? "Guardar Dinheiro" : "Resgatar Dinheiro"}
           </DialogTitle>
           <DialogDescription>
-            {selectedBox?.name} • Saldo:{" "}
+            {selectedBox?.nome} • Saldo:{" "}
             {new Intl.NumberFormat("pt-BR", {
               style: "currency",
               currency: "BRL",
-            }).format(selectedBox?.balance || 0)}
+            }).format(selectedBox?.saldo || 0)}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

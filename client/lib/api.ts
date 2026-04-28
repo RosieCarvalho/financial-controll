@@ -30,6 +30,8 @@ export const getTypesStatusTransaction = () =>
 export const createCaixa = (payload: any) => api.post("/api/caixas", payload);
 export const getHistoricoCaixa = (id: string) =>
   api.get(`/api/caixas/${id}/historico`);
+export const createHistoricoCaixa = (id: string, payload: any) =>
+  api.post(`/api/caixas/${id}/historico`, payload);
 export const createPlanoFuturo = (payload: any) =>
   api.post("/api/planos_futuros", payload);
 export const getComprasTerceiros = () => api.get("/api/compras_terceiros");
@@ -41,6 +43,10 @@ export const updateTransaction = (payload: TransactionBD) =>
   api.put(`/api/transactions`, payload);
 export const createCategoria = (payload: any) =>
   api.post("/api/categorias", payload);
+export const updateCategoria = (id: string, payload: any) =>
+  api.put(`/api/categorias/${id}`, payload);
+export const deleteCategoria = (id: string) =>
+  api.delete(`/api/categorias/${id}`);
 
 export const createCartao = (payload: any) => api.post("/api/cartoes", payload);
 export const updateCartao = (id: string, payload: any) =>

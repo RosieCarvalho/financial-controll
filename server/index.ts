@@ -21,6 +21,7 @@ import {
   getCaixa,
   createCaixa,
   listHistoricoCaixa,
+  createHistoricoCaixa,
 } from "./routes/caixas";
 import {
   listCartoes,
@@ -75,6 +76,7 @@ export function createServer() {
   app.get("/api/caixas/:id", getCaixa);
   app.post("/api/caixas", createCaixa);
   app.get("/api/caixas/:id/historico", listHistoricoCaixa);
+  app.post("/api/caixas/:id/historico", createHistoricoCaixa);
 
   // Cartões de crédito
   app.get("/api/cartoes", listCartoes);

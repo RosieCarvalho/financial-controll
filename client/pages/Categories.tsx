@@ -4,7 +4,6 @@ import { getCategorias } from "@/lib/api";
 import {
   Plus,
   Search,
-  MoreVertical,
   Tags,
   Target,
   ShoppingCart,
@@ -50,6 +49,8 @@ import { Category } from "@shared/api";
 import { createCategoria } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { DeleteCategoryModal } from "./Categories/components/DeleteCategoryModal";
+import { EditCategoryDialog } from "./Categories/components/EditCategoryDialog";
 
 // Use API-provided categories only; remove local mock data.
 
@@ -100,7 +101,7 @@ export default function CategoriesPage() {
     const payload: Partial<Category> = {
       name: newName,
       type: newType,
-      rule: newRule as "50" | "30" | "20",
+      rule: newRule as "50" | "30" | "10p" | "10a",
       color: newColor,
     };
 
@@ -174,7 +175,7 @@ export default function CategoriesPage() {
                 </div>
                 <div className="grid gap-2">
                   <label className="text-sm font-medium">
-                    Regra (50/30/20)
+                    Regra (50/30/10/10)
                   </label>
                   <Select
                     value={newRule}
@@ -187,7 +188,10 @@ export default function CategoriesPage() {
                     <SelectContent>
                       <SelectItem value="50">Essenciais (50%)</SelectItem>
                       <SelectItem value="30">Desejos (30%)</SelectItem>
-                      <SelectItem value="20">Reserva (20%)</SelectItem>
+                      <SelectItem value="10p">Pendências (10%)</SelectItem>
+                      <SelectItem value="10a">
+                        Ajuda ao próximo (10%)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,7 +233,7 @@ export default function CategoriesPage() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
         <Card className="border-none shadow-sm bg-emerald-50/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-emerald-700 flex items-center gap-2">
@@ -259,7 +263,7 @@ export default function CategoriesPage() {
         <Card className="border-none shadow-sm bg-emerald-200/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold text-emerald-950 flex items-center gap-2">
-              <Target className="h-4 w-4" /> Reserva/Dívidas (20%)
+              <Target className="h-4 w-4" /> Reserva/Dívidas (10%)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -267,6 +271,16 @@ export default function CategoriesPage() {
               Seu futuro: investimentos, fundo de reserva ou pagamento de
               dívidas.
             </p>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-emerald-200/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-emerald-950 flex items-center gap-2">
+              <Target className="h-4 w-4" /> Ao próximo (10%)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-emerald-950">Ajuda ao próximo</p>
           </CardContent>
         </Card>
       </div>
@@ -338,13 +352,10 @@ export default function CategoriesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <EditCategoryDialog category={cat} />
+                        <DeleteCategoryModal categoryId={cat.id} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

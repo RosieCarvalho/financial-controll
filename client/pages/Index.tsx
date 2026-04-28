@@ -135,24 +135,38 @@ export default function Dashboard() {
   }, [dashboard]);
 
   const ruleData = useMemo(() => {
-    // placeholder: map dashboard.ruleStats if available
+    // Map dashboard.ruleStats to new 50/30/10/10 buckets
     return [
       {
         name: "Essenciais (50%)",
         value: dashboard?.ruleStats?.rule50?.current ?? 0,
-        limit: dashboard?.ruleStats?.rule50?.limit ?? 1,
+        limit:
+          dashboard?.ruleStats?.rule50?.limit ??
+          Math.max(1, dashboard?.totalIncome ?? 1) * 0.5,
         color: "#059669",
       },
       {
-        name: "Desejos (30%)",
+        name: "Desejos Pessoais (30%)",
         value: dashboard?.ruleStats?.rule30?.current ?? 0,
-        limit: dashboard?.ruleStats?.rule30?.limit ?? 1,
+        limit:
+          dashboard?.ruleStats?.rule30?.limit ??
+          Math.max(1, dashboard?.totalIncome ?? 1) * 0.3,
         color: "#10b981",
       },
       {
-        name: "Reserva (20%)",
-        value: dashboard?.ruleStats?.rule20?.current ?? 0,
-        limit: dashboard?.ruleStats?.rule20?.limit ?? 1,
+        name: "Pendências Financeiras (10%)",
+        value: dashboard?.ruleStats?.rule10Pendencias?.current ?? 0,
+        limit:
+          dashboard?.ruleStats?.rule10Pendencias?.limit ??
+          Math.max(1, dashboard?.totalIncome ?? 1) * 0.1,
+        color: "#f59e0b",
+      },
+      {
+        name: "Ajuda ao Próximo (10%)",
+        value: dashboard?.ruleStats?.rule10Ajuda?.current ?? 0,
+        limit:
+          dashboard?.ruleStats?.rule10Ajuda?.limit ??
+          Math.max(1, dashboard?.totalIncome ?? 1) * 0.1,
         color: "#34d399",
       },
     ];

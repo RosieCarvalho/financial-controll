@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 /* Tipos enumerados */
-CREATE TYPE financial_rule AS ENUM ('50','30','20');
+CREATE TYPE financial_rule AS ENUM ('50','30','10p','10a');
 CREATE TYPE categoria_tipo AS ENUM ('income','expense');
 CREATE TYPE transacao_tipo AS ENUM ('fixed','one-time','installment');
 CREATE TYPE transacao_status AS ENUM ('pending','paid');
