@@ -17,6 +17,7 @@ CREATE TABLE categorias (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nome text NOT NULL,
   regra financial_rule NOT NULL,
+  created_by uuid,
   tipo categoria_tipo NOT NULL,
   cor text,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -25,6 +26,7 @@ CREATE TABLE categorias (
 
 CREATE TABLE caixas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid,
   nome text NOT NULL,
   saldo numeric(14,2) NOT NULL DEFAULT 0,
   descricao text,
@@ -44,6 +46,7 @@ CREATE TABLE historico_caixa (
 
 CREATE TABLE cartoes_credito (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid,
   nome text NOT NULL,
   limite numeric(14,2) NOT NULL DEFAULT 0,
   dia_fechamento smallint,
@@ -56,6 +59,7 @@ CREATE TABLE cartoes_credito (
 
 CREATE TABLE compras_terceiros (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid,
   nome_pessoa text NOT NULL,
   descricao text,
   valor numeric(14,2) NOT NULL,
@@ -69,6 +73,7 @@ CREATE TABLE compras_terceiros (
 
 CREATE TABLE transacoes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid,
   descricao text,
   valor numeric(14,2) NOT NULL,
   data timestamptz NOT NULL,
@@ -86,6 +91,7 @@ CREATE TABLE transacoes (
 
 CREATE TABLE planos_futuros (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by uuid,
   nome_item text NOT NULL,
   valor_total numeric(14,2) NOT NULL,
   parcelas int DEFAULT 1,

@@ -14,6 +14,9 @@ import Categories from "./pages/Categories";
 import CardDetails from "./pages/Cards/CardDetails";
 import FuturePlans from "./pages/FuturePlans";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import AuthProvider, { PrivateRoute } from "@/components/AuthProvider";
+import Profile from "./pages/Profile";
 
 import { Layout } from "@/components/Layout";
 
@@ -36,72 +39,104 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Layout>
-                <Index />
-              </Layout>
-            }
-          />
-          <Route
-            path="/finances"
-            element={
-              <Layout>
-                <Finances />
-              </Layout>
-            }
-          />
-          <Route
-            path="/cards"
-            element={
-              <Layout>
-                <Cards />
-              </Layout>
-            }
-          />
-          <Route
-            path="/cards/:id"
-            element={
-              <Layout>
-                <CardDetails />
-              </Layout>
-            }
-          />
-          <Route
-            path="/savings"
-            element={
-              <Layout>
-                <Savings />
-              </Layout>
-            }
-          />
-          <Route
-            path="/future-plans"
-            element={
-              <Layout>
-                <FuturePlans />
-              </Layout>
-            }
-          />
-          <Route
-            path="/categories"
-            element={
-              <Layout>
-                <Categories />
-              </Layout>
-            }
-          />
-          <Route
-            path="/settings"
-            element={<PlaceholderPage title="Configurações" />}
-          />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+
+            <Route
+              path="/"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Index />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/finances"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Finances />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cards"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Cards />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/cards/:id"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <CardDetails />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/savings"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Savings />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/future-plans"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <FuturePlans />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/categories"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Categories />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <PlaceholderPage title="Configurações" />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Profile />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

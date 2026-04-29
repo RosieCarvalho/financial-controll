@@ -10,9 +10,13 @@ const isUuid = (v: any) =>
 
 export const listCartoes: RequestHandler = async (_req, res) => {
   try {
+    const user = (_req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("cartoes_com_fatura_total")
-      .select("*");
+      .select("*")
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -23,10 +27,14 @@ export const listCartoes: RequestHandler = async (_req, res) => {
 export const getCartao: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("cartoes_com_fatura_total")
       .select("*")
       .eq("id", id)
+      .eq("created_by", user.id)
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Cartão não encontrado" });
@@ -52,6 +60,10 @@ export const createCartao: RequestHandler = async (req, res) => {
     if (payload && (payload as any).id && !isUuid((payload as any).id))
       delete (payload as any).id;
 
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    dbPayload.created_by = user.id;
+
     const { data, error } = await supabase
       .from("cartoes_credito")
       .insert([dbPayload])
@@ -73,11 +85,15 @@ export const createCartao: RequestHandler = async (req, res) => {
 export const listarFaturaCartao: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("transacoes")
       .select("*")
       .eq("cartao_id", id)
-      .eq("status", "pending");
+      .eq("status", "pending")
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -98,10 +114,14 @@ export const updateCartao: RequestHandler = async (req, res) => {
       cor: payload.color ?? payload.cor,
     };
 
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("cartoes_credito")
       .update(dbPayload)
       .eq("id", id)
+      .eq("created_by", user.id)
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -115,10 +135,14 @@ export const deleteCartao: RequestHandler = async (req, res) => {
   const { id } = req.params;
   if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { error } = await supabase
       .from("cartoes_credito")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(204).send();
   } catch (err: any) {

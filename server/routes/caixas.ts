@@ -4,7 +4,13 @@ import type { CashBox } from "@shared/api";
 
 export const listCaixas: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from("caixas").select("*");
+    const user = (_req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { data, error } = await supabase
+      .from("caixas")
+      .select("*")
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -15,10 +21,14 @@ export const listCaixas: RequestHandler = async (_req, res) => {
 export const getCaixa: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("caixas")
       .select("*")
       .eq("id", id)
+      .eq("created_by", user.id)
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Caixa não encontrado" });
@@ -31,9 +41,13 @@ export const getCaixa: RequestHandler = async (req, res) => {
 export const createCaixa: RequestHandler = async (req, res) => {
   const payload = req.body as Partial<CashBox>;
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const dbPayload = { ...payload, created_by: user.id };
+
     const { data, error } = await supabase
       .from("caixas")
-      .insert([payload])
+      .insert([dbPayload])
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -46,9 +60,42 @@ export const createCaixa: RequestHandler = async (req, res) => {
 export const listHistoricoCaixa: RequestHandler = async (req, res) => {
   const { caixaId } = req.query;
   try {
-    const query = supabase.from("historico_caixa").select("*");
-    if (caixaId) query.eq("caixa_id", String(caixaId));
-    const { data, error } = await query;
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    if (caixaId) {
+      // verify ownership
+      const { data: caixaData, error: caixaError } = await supabase
+        .from("caixas")
+        .select("id")
+        .eq("id", String(caixaId))
+        .eq("created_by", user.id)
+        .maybeSingle();
+      if (caixaError)
+        return res.status(500).json({ error: caixaError.message });
+      if (!caixaData)
+        return res.status(404).json({ error: "Caixa não encontrado" });
+
+      const { data, error } = await supabase
+        .from("historico_caixa")
+        .select("*")
+        .eq("caixa_id", String(caixaId));
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
+    }
+
+    // no caixaId: return historico for all user's caixas
+    const { data: caixasData, error: caixasError } = await supabase
+      .from("caixas")
+      .select("id")
+      .eq("created_by", user.id);
+    if (caixasError)
+      return res.status(500).json({ error: caixasError.message });
+    const caixaIds = (caixasData ?? []).map((c: any) => c.id);
+    const { data, error } = await supabase
+      .from("historico_caixa")
+      .select("*")
+      .in("caixa_id", caixaIds.length ? caixaIds : ["__none__"]);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -70,11 +117,15 @@ export const createHistoricoCaixa: RequestHandler = async (req, res) => {
   }
 
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     // Get current caixa saldo
     const { data: caixaData, error: caixaError } = await supabase
       .from("caixas")
       .select("*")
       .eq("id", caixaId)
+      .eq("created_by", user.id)
       .maybeSingle();
 
     if (caixaError) return res.status(500).json({ error: caixaError.message });
@@ -121,12 +172,10 @@ export const createHistoricoCaixa: RequestHandler = async (req, res) => {
 
     if (joinError) return res.status(500).json({ error: joinError.message });
 
-    return res
-      .status(201)
-      .json({
-        historico: historicoData,
-        caixa: caixaWithHistory ?? updatedCaixa,
-      });
+    return res.status(201).json({
+      historico: historicoData,
+      caixa: caixaWithHistory ?? updatedCaixa,
+    });
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }

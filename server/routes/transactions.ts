@@ -10,6 +10,9 @@ const isUuid = (v: any) =>
 
 export const listTransactions: RequestHandler = async (_req, res) => {
   try {
+    const user = (_req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("transacoes")
       .select(
@@ -21,6 +24,7 @@ export const listTransactions: RequestHandler = async (_req, res) => {
         )
       `,
       )
+      .eq("created_by", user.id)
       .is("compra_terceiros_id", null);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(
@@ -75,6 +79,10 @@ export const createTransaction: RequestHandler = async (req, res) => {
     if (dbPayload.compra_terceiros_id && !isUuid(dbPayload.compra_terceiros_id))
       dbPayload.compra_terceiros_id = null;
 
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    dbPayload.created_by = user.id;
+
     const { data, error } = await supabase
       .from("transacoes")
       .insert([dbPayload])
@@ -100,7 +108,14 @@ export const getTypesStatusTransaction: RequestHandler = async (_req, res) => {
 export const deleteTransaction: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
-    const { error } = await supabase.from("transacoes").delete().eq("id", id);
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { error } = await supabase
+      .from("transacoes")
+      .delete()
+      .eq("id", id)
+      .eq("created_by", user.id);
     console.log("err", error);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(204).send();
@@ -113,11 +128,48 @@ export const deleteTransaction: RequestHandler = async (req, res) => {
 export const updateTransactions: RequestHandler = async (req, res) => {
   const payload = req.body as Partial<TransactionBD>;
   try {
-    const { error } = await supabase
-      .from("transacoes")
-      .upsert(payload, { onConflict: "id" });
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(204).send();
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    // If payload is an array, update each owned transaction individually.
+    if (Array.isArray(payload)) {
+      for (const item of payload) {
+        if (item.id) {
+          const dbPayload: any = { ...item };
+          // Prevent changing ownership
+          delete dbPayload.created_by;
+          const { error } = await supabase
+            .from("transacoes")
+            .update(dbPayload)
+            .eq("id", item.id)
+            .eq("created_by", user.id);
+          if (error) return res.status(500).json({ error: error.message });
+        } else {
+          // new row: set created_by
+          const { error } = await supabase
+            .from("transacoes")
+            .insert([{ ...item, created_by: user.id }]);
+          if (error) return res.status(500).json({ error: error.message });
+        }
+      }
+      return res.status(204).send();
+    }
+
+    // Single object
+    if ((payload as any).id) {
+      const id = (payload as any).id;
+      const dbPayload: any = { ...(payload as any) };
+      delete dbPayload.created_by;
+      const { error } = await supabase
+        .from("transacoes")
+        .update(dbPayload)
+        .eq("id", id)
+        .eq("created_by", user.id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(204).send();
+    }
+
+    return res.status(400).json({ error: "Invalid payload for update" });
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }

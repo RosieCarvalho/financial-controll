@@ -16,6 +16,7 @@ import {
   updateCategoria,
   deleteCategoria,
 } from "./routes/categorias";
+import { authMiddleware } from "./middleware/auth";
 import {
   listCaixas,
   getCaixa,
@@ -56,6 +57,9 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Protect subsequent API routes: require Authorization Bearer token
+  app.use("/api", authMiddleware);
 
   // Supabase-backed transactions endpoints (expect tables in Supabase with Portuguese names)
   app.get("/api/transactions", listTransactions);

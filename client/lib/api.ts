@@ -1,11 +1,27 @@
 import { TransactionBD } from "@shared/api";
 import axios from "axios";
+import { supabaseBrowser } from "@/lib/supabaseClient";
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string) || "/";
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+});
+
+// Attach auth token from Supabase to requests
+api.interceptors.request.use(async (config) => {
+  try {
+    const session = await supabaseBrowser.auth.getSession();
+    const token = session?.data?.session?.access_token;
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as any)["Authorization"] = `Bearer ${token}`;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return config;
 });
 
 // Response interceptor: unwrap `data` and normalize errors

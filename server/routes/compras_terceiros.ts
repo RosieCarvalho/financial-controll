@@ -10,9 +10,13 @@ const isUuid = (v: any) =>
 
 export const listComprasTerceiros: RequestHandler = async (_req, res) => {
   try {
+    const user = (_req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("compras_terceiros")
-      .select("*");
+      .select("*")
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json(data);
   } catch (err: any) {
@@ -47,6 +51,10 @@ export const createCompraTerceiro: RequestHandler = async (req, res) => {
     if (dbPayload.cartao_id && !isUuid(dbPayload.cartao_id))
       dbPayload.cartao_id = null;
 
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    dbPayload.created_by = user.id;
+
     const { data, error } = await supabase
       .from("compras_terceiros")
       .insert([dbPayload])
@@ -72,6 +80,7 @@ export const receiveCompraTerceiro: RequestHandler = async (req, res) => {
       .from("compras_terceiros")
       .select("*")
       .eq("id", id)
+      .eq("created_by", user.id)
       .single();
 
     if (fetchError || !tp) {
@@ -135,10 +144,14 @@ export const updateCompraTerceiro: RequestHandler = async (req, res) => {
       parcelas_pagas: payload.paidInstallments ?? payload.parcelas_pagas,
     };
 
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { data, error } = await supabase
       .from("compras_terceiros")
       .update(dbPayload)
       .eq("id", id)
+      .eq("created_by", user.id)
       .select()
       .single();
 
@@ -153,10 +166,14 @@ export const deleteCompraTerceiro: RequestHandler = async (req, res) => {
   const { id } = req.params;
   if (!isUuid(id)) return res.status(400).json({ error: "ID inválido" });
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const { error } = await supabase
       .from("compras_terceiros")
       .delete()
-      .eq("id", id);
+      .eq("id", id)
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(204).send();
   } catch (err: any) {

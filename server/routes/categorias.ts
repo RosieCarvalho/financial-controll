@@ -23,7 +23,13 @@ const apiToDb = (payload: Partial<Category>) => {
 
 export const listCategorias: RequestHandler = async (_req, res) => {
   try {
-    const { data, error } = await supabase.from("categorias").select("*");
+    const user = (_req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
+    const { data, error } = await supabase
+      .from("categorias")
+      .select("*")
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json((data ?? []).map(dbToApi));
   } catch (err: any) {
@@ -52,6 +58,9 @@ export const createCategoria: RequestHandler = async (req, res) => {
   const payload = req.body as Partial<Category>;
   try {
     const dbPayload = apiToDb(payload);
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    dbPayload.created_by = user.id;
     const { data, error } = await supabase
       .from("categorias")
       .insert([dbPayload])
@@ -69,10 +78,13 @@ export const updateCategoria: RequestHandler = async (req, res) => {
   const payload = req.body as Partial<Category>;
   try {
     const dbPayload = apiToDb(payload);
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
     const { data, error } = await supabase
       .from("categorias")
       .update(dbPayload)
       .eq("id", id)
+      .eq("created_by", user.id)
       .select()
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
@@ -87,7 +99,13 @@ export const updateCategoria: RequestHandler = async (req, res) => {
 export const deleteCategoria: RequestHandler = async (req, res) => {
   const { id } = req.params;
   try {
-    const { error } = await supabase.from("categorias").delete().eq("id", id);
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+    const { error } = await supabase
+      .from("categorias")
+      .delete()
+      .eq("id", id)
+      .eq("created_by", user.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(204).send();
   } catch (err: any) {
