@@ -1,4 +1,12 @@
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Node modules and build outputs (if not present already)
 node_modules/
+dist/
+build/node_modules/
 .env
 .env.local
 .env.*.local
