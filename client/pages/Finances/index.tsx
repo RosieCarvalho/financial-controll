@@ -43,6 +43,7 @@ import {
   getCategorias,
   createTransaction,
   getTypesStatusTransaction,
+  deleteTransaction as apiDeleteTransaction,
 } from "@/lib/api";
 import { toast } from "sonner";
 import { NewTransactionDialog } from "./components/NewTransactionDialog";
@@ -103,12 +104,7 @@ export default function Finances() {
   const queryClient = useQueryClient();
   const deleteMutation = useMutation({
     mutationFn: (id: string) => {
-      return fetch(`/api/transactions/${id}`, { method: "DELETE" }).then(
-        (r) => {
-          if (!r.ok) throw new Error("Erro ao excluir");
-          return r;
-        },
-      );
+      return apiDeleteTransaction(id);
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["transacoes"] }),

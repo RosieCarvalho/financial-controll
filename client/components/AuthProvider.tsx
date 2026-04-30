@@ -4,6 +4,7 @@ import { supabaseBrowser } from "@/lib/supabaseClient";
 type User = {
   id: string;
   email?: string | null;
+  name?: string | null;
 };
 
 type AuthContextValue = {
@@ -30,7 +31,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           data: { user: currentUser },
         } = await supabaseBrowser.auth.getUser();
         if (currentUser)
-          setUser({ id: currentUser.id, email: currentUser.email });
+          setUser({
+            id: currentUser.id,
+            email: currentUser.email,
+            name:
+              (currentUser.user_metadata &&
+                (currentUser.user_metadata.name ||
+                  currentUser.user_metadata.full_name)) ||
+              (currentUser?.app_metadata &&
+                currentUser.app_metadata.user_name) ||
+              currentUser.email ||
+              null,
+          });
       } finally {
         setInitializing(false);
       }
@@ -40,7 +52,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { data: listener } = supabaseBrowser.auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) {
-          setUser({ id: session.user.id, email: session.user.email });
+          setUser({
+            id: session.user.id,
+            email: session.user.email,
+            name:
+              (session.user.user_metadata &&
+                (session.user.user_metadata.name ||
+                  session.user.user_metadata.full_name)) ||
+              (session.user?.app_metadata &&
+                session.user.app_metadata.user_name) ||
+              session.user.email ||
+              null,
+          });
         } else {
           setUser(null);
         }

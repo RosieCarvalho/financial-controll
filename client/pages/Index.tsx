@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard, getPlanosFuturos } from "@/lib/api";
 import {
@@ -172,12 +173,14 @@ export default function Dashboard() {
     ];
   }, [dashboard]);
 
+  const { user } = useAuth();
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Bem-vindo, Rosiene
+            Bem-vindo, {user?.name ?? user?.email ?? "Usuário"}
           </h1>
           <p className="text-muted-foreground">
             Aqui está o resumo do seu controle financeiro.

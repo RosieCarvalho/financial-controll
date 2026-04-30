@@ -2,16 +2,19 @@ import { RequestHandler } from "express";
 import { supabase } from "../supabase";
 
 // Build a basic dashboard summary using transactions and categories
-export const getDashboard: RequestHandler = async (_req, res) => {
+export const getDashboard: RequestHandler = async (req, res) => {
   try {
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: "Unauthorized" });
+
     const [
       { data: transacoes, error: errT },
       { data: categorias, error: errC },
       { data: cartoes, error: errCard },
     ] = await Promise.all([
-      supabase.from("transacoes").select("*"),
-      supabase.from("categorias").select("*"),
-      supabase.from("cartoes_credito").select("*"),
+      supabase.from("transacoes").select("*").eq("created_by", user.id),
+      supabase.from("categorias").select("*").eq("created_by", user.id),
+      supabase.from("cartoes_credito").select("*").eq("created_by", user.id),
     ]);
 
     if (errT) return res.status(500).json({ error: errT.message });

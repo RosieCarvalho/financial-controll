@@ -168,18 +168,16 @@ export function ThirdPartyList({
                                   "Confirma exclusão desta compra de terceiro?",
                                 )
                               ) {
-                                fetch(`/api/compras_terceiros/${tp.id}`, {
-                                  method: "DELETE",
-                                }).then((r) => {
-                                  if (r.ok) {
+                                deleteCompraTerceiro(tp.id)
+                                  .then(() => {
                                     queryClient.invalidateQueries({
                                       queryKey: ["compras_terceiros"],
                                     });
                                     alert("Excluído");
-                                  } else {
+                                  })
+                                  .catch(() => {
                                     alert("Erro ao excluir");
-                                  }
-                                });
+                                  });
                               }
                             }}
                           >
