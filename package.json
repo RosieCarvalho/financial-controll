@@ -20,12 +20,13 @@
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "predeploy": "vite run build:client",
-    "deploy": "gh-pages -d dist/spa"
+    "deploy": "gh-pages -d dist/spa",
+    "homepage": "https://rosiecarvalho.github.io/financial-controll"
   },
   "dependencies": {
-    "dotenv": "^17.2.1",
-    "axios": "^1.4.0",
     "@supabase/supabase-js": "^2.33.0",
+    "axios": "^1.4.0",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "zod": "^3.25.76"
   },
@@ -78,6 +79,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.12",
+    "gh-pages": "^6.3.0",
     "globals": "^16.3.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.539.0",
@@ -101,8 +103,7 @@
     "typescript": "^5.9.2",
     "vaul": "^1.1.2",
     "vite": "^7.1.2",
-    "vitest": "^3.2.4",
-    "gh-pages": "^5.0.0"
+    "vitest": "^3.2.4"
   },
   "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }
