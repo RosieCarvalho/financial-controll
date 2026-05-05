@@ -17,16 +17,10 @@ import {
 import {
   CreditCard,
   ArrowLeft,
-  ChevronRight,
   Layers,
-  Calendar,
-  Plus,
   MoreVertical,
   AlertCircle,
   Clock,
-  CheckCircle2,
-  Trash2,
-  Tag,
 } from "lucide-react";
 import {
   Card,
