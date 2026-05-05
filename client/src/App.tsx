@@ -40,7 +40,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <HashRouter basename="/financial-controll">
+        <HashRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
 
