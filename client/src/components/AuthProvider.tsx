@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabaseBrowser } from "@/src/lib/supabaseClient";
+import { Navigate } from "react-router-dom";
 
 type User = {
   id: string;
@@ -120,8 +121,7 @@ export const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({
   if (initializing) return null; // or a loader
   if (!user) {
     // client-side redirect to /login
-    if (typeof window !== "undefined")
-      window.location.href = "/financial-controll/login";
+    if (typeof window !== "undefined") return <Navigate to="login" />;
     return null;
   }
   return <>{children}</>;
