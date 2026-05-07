@@ -10,7 +10,8 @@
     "types": ["node"],
     "paths": {
       "@shared/*": ["../shared/*"]
-    }
+    },
+    "noEmitOnError": false
   },
   "include": ["src"]
 }
