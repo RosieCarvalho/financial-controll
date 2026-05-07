@@ -1,6 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer } from "../server";
+import { createServer } from "./server";
 import * as express from "express";
 import cors from "cors";
 

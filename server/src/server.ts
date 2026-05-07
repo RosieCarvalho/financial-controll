@@ -1,29 +1,29 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { handleDemo } from "./src/routes/demo";
+import { handleDemo } from "./routes/demo";
 import {
   listTransactions,
   createTransaction,
   getTypesStatusTransaction,
   deleteTransaction,
   updateTransactions,
-} from "./src/routes/transactions";
+} from "./routes/transactions";
 import {
   listCategorias,
   getCategoria,
   createCategoria,
   updateCategoria,
   deleteCategoria,
-} from "./src/routes/categorias";
-import { authMiddleware } from "./src/middleware/auth";
+} from "./routes/categorias";
+import { authMiddleware } from "./middleware/auth";
 import {
   listCaixas,
   getCaixa,
   createCaixa,
   listHistoricoCaixa,
   createHistoricoCaixa,
-} from "./src/routes/caixas";
+} from "./routes/caixas";
 import {
   listCartoes,
   getCartao,
@@ -31,19 +31,19 @@ import {
   listarFaturaCartao,
   updateCartao,
   deleteCartao,
-} from "./src/routes/cartoes";
+} from "./routes/cartoes";
 import {
   listComprasTerceiros,
   createCompraTerceiro,
   receiveCompraTerceiro,
   updateCompraTerceiro,
   deleteCompraTerceiro,
-} from "./src/routes/compras_terceiros";
+} from "./routes/compras_terceiros";
 import {
   listPlanosFuturos,
   createPlanoFuturo,
-} from "./src/routes/planos_futuros";
-import { getDashboard } from "./src/routes/dashboard";
+} from "./routes/planos_futuros";
+import { getDashboard } from "./routes/dashboard";
 
 export function createServer() {
   const app = express();
