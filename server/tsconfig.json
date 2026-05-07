@@ -8,11 +8,9 @@
     "strict": true,
     "esModuleInterop": true,
     "types": ["node"],
-    "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
-    },
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": ["src"]
 }
