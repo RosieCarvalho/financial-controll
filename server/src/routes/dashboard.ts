@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
+import { supabase } from "../supabase";
 
 // Build a basic dashboard summary using transactions and categories
 export const getDashboard: RequestHandler = async (req, res) => {

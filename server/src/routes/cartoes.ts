@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
+import { supabase } from "../supabase";
 
 const isUuid = (v: any) =>
   typeof v === "string" &&

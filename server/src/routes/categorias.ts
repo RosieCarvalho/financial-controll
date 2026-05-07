@@ -1,9 +1,8 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
-import type { Category } from "@shared/api";
+import { supabase } from "../supabase";
 
 // Helper: map DB row (Portuguese columns) to API shape (English)
-const dbToApi = (row: any): Category => ({
+const dbToApi = (row: any) => ({
   id: row.id,
   name: row.nome ?? row.name,
   rule: row.regra ?? row.rule,
@@ -12,7 +11,7 @@ const dbToApi = (row: any): Category => ({
 });
 
 // Helper: map API payload to DB columns
-const apiToDb = (payload: Partial<Category>) => {
+const apiToDb = (payload: any) => {
   const db: any = {};
   if (payload.name !== undefined) db.nome = payload.name;
   if (payload.rule !== undefined) db.regra = payload.rule;
@@ -48,14 +47,14 @@ export const getCategoria: RequestHandler = async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
     if (!data)
       return res.status(404).json({ error: "Categoria não encontrada" });
-    return res.json(dbToApi(data as any) as Category);
+    return res.json(dbToApi(data as any));
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }
 };
 
 export const createCategoria: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<Category>;
+  const payload = req.body;
   try {
     const dbPayload = apiToDb(payload);
     const user = (req as any).user;
@@ -75,7 +74,7 @@ export const createCategoria: RequestHandler = async (req, res) => {
 
 export const updateCategoria: RequestHandler = async (req, res) => {
   const { id } = req.params;
-  const payload = req.body as Partial<Category>;
+  const payload = req.body;
   try {
     const dbPayload = apiToDb(payload);
     const user = (req as any).user;

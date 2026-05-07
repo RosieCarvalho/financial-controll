@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
+import { supabase } from "../supabase";
 
 export const authMiddleware: RequestHandler = async (req, res, next) => {
   try {

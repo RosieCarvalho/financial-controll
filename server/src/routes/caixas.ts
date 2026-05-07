@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
-import type { CashBox } from "@shared/api";
+import { supabase } from "../supabase";
 
 export const listCaixas: RequestHandler = async (_req, res) => {
   try {
@@ -32,14 +31,14 @@ export const getCaixa: RequestHandler = async (req, res) => {
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Caixa não encontrado" });
-    return res.json(data as CashBox);
+    return res.json(data);
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }
 };
 
 export const createCaixa: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<CashBox>;
+  const payload = req.body;
   try {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ error: "Unauthorized" });

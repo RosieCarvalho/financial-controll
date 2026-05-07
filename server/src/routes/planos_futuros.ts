@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
-import type { FuturePlan } from "@shared/api";
+import { supabase } from "../supabase";
 
 export const listPlanosFuturos: RequestHandler = async (_req, res) => {
   try {
@@ -19,7 +18,7 @@ export const listPlanosFuturos: RequestHandler = async (_req, res) => {
 };
 
 export const createPlanoFuturo: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<FuturePlan>;
+  const payload = req.body;
   try {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ error: "Unauthorized" });

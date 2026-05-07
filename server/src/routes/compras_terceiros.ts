@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
-import { supabase } from "../../supabase";
-import type { ThirdPartyPurchase } from "@shared/api";
+import { supabase } from "../supabase";
 
 const isUuid = (v: any) =>
   typeof v === "string" &&
