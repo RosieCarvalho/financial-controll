@@ -1,6 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer } from "./server";
+import { createServer } from "../server";
 import * as express from "express";
 import cors from "cors";
 
@@ -11,6 +11,12 @@ app.listen(port, () => {
   console.log(`🚀 Fusion Starter server running on port ${port}`);
   console.log(`🔧 API: http://localhost:${port}/api`);
 });
+
+app.use(
+  cors({
+    origin: "https://rosiecarvalho.github.io",
+  }),
+);
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
