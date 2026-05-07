@@ -9,7 +9,7 @@ const SUPABASE_KEY =
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false },
   realtime: {
-    transport: ws, // 🔥 ESSA LINHA RESOLVE
+    transport: ws as any, // 🔥 ESSA LINHA RESOLVE
   },
 });
 

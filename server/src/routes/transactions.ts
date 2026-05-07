@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
 import { supabase } from "../../supabase";
-import type { Transaction, TransactionBD } from "@shared/api";
 
 const isUuid = (v: any) =>
   typeof v === "string" &&
@@ -51,7 +50,7 @@ export const listTransactions: RequestHandler = async (_req, res) => {
 };
 
 export const createTransaction: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<Transaction>;
+  const payload = req.body;
   try {
     // Map client payload keys to DB column names
     const dbPayload: any = {
@@ -126,7 +125,7 @@ export const deleteTransaction: RequestHandler = async (req, res) => {
 };
 
 export const updateTransactions: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<TransactionBD>;
+  const payload = req.body;
   try {
     const user = (req as any).user;
     if (!user) return res.status(401).json({ error: "Unauthorized" });

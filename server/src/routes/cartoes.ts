@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
 import { supabase } from "../../supabase";
-import type { CreditCard } from "@shared/api";
 
 const isUuid = (v: any) =>
   typeof v === "string" &&
@@ -38,14 +37,14 @@ export const getCartao: RequestHandler = async (req, res) => {
       .maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "Cartão não encontrado" });
-    return res.json(data as CreditCard);
+    return res.json(data);
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? String(err) });
   }
 };
 
 export const createCartao: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<CreditCard>;
+  const payload = req.body;
   try {
     const dbPayload: any = {
       nome: payload.name ?? payload["nome"],

@@ -73,6 +73,8 @@ export const receiveCompraTerceiro: RequestHandler = async (req, res) => {
   if (!isUuid(id)) {
     return res.status(400).json({ error: "ID de compra inválido" });
   }
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     // 1. Buscar a compra de terceiro atual
