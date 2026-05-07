@@ -25,7 +25,7 @@ export const listComprasTerceiros: RequestHandler = async (_req, res) => {
 };
 
 export const createCompraTerceiro: RequestHandler = async (req, res) => {
-  const payload = req.body as Partial<ThirdPartyPurchase>;
+  const payload = req.body;
   try {
     // Normalização dos campos (Suporta camelCase da UI e snake_case do banco)
     const dbPayload: any = {

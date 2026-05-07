@@ -39,10 +39,7 @@ import {
   updateCompraTerceiro,
   deleteCompraTerceiro,
 } from "./routes/compras_terceiros";
-import {
-  listPlanosFuturos,
-  createPlanoFuturo,
-} from "./routes/planos_futuros";
+import { listPlanosFuturos, createPlanoFuturo } from "./routes/planos_futuros";
 import { getDashboard } from "./routes/dashboard";
 
 export function createServer() {
