@@ -84,7 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signInWithOAuth = (provider: string) => {
-    return supabaseBrowser.auth.signInWithOAuth({ provider: provider as any });
+    return supabaseBrowser.auth.signInWithOAuth({
+      provider: provider as any,
+      options: {
+        redirectTo: "https://rosiecarvalho.github.io/financial-controll/",
+      },
+    });
   };
 
   const signOut = async () => {
